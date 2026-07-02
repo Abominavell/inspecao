@@ -24,7 +24,20 @@
     {% else %}
     @page content-template {
       size: a4 portrait;
-      margin: 1.8cm 1.5cm 2cm 1.5cm;
+      margin: 0;
+      @frame header_frame {
+        -pdf-frame-content: pdf-page-header;
+        top: 0.6cm;
+        left: 1.5cm;
+        width: 17cm;
+        height: 2.6cm;
+      }
+      @frame content_frame {
+        top: 3.5cm;
+        left: 1.5cm;
+        width: 17cm;
+        bottom: 2cm;
+      }
     }
 
     @page cover-template {
@@ -119,6 +132,13 @@
       page-break-inside: avoid;
       page-break-after: avoid;
       clear: both;
+    }
+
+    #pdf-page-header {
+      position: absolute;
+      top: -100cm;
+      left: 0;
+      width: 17cm;
     }
 
     .header-banner {
@@ -444,9 +464,9 @@
 </head>
 <body>
 
-  {% macro institutional_header() %}
+  {% macro institutional_header(running=false) %}
   <div class="page-header">
-    {% if header_banner_uri %}
+    {% if header_banner_uri and not running %}
     <img class="header-banner" src="{{ header_banner_uri }}" alt="Cabeçalho EMSERH">
     {% else %}
     <table class="doc-header-box">
@@ -471,16 +491,13 @@
   {% endmacro %}
 
   {% macro page_header_slot() %}
-  <div class="page-header-slot">
+  <div id="pdf-page-header" class="page-header-slot">
     {{ institutional_header() }}
   </div>
   {% endmacro %}
 
   {% macro new_page() %}
   <div class="page-break"></div>
-  {% if pdf_engine == 'xhtml2pdf' %}
-  {{ page_header_slot() }}
-  {% endif %}
   {% endmacro %}
 
   {% if pdf_engine == 'xhtml2pdf' %}
@@ -518,12 +535,14 @@
   </div>
 
   {% if pdf_engine == 'xhtml2pdf' %}
+  <div id="pdf-page-header">
+    {{ institutional_header() }}
+  </div>
   <pdf:nexttemplate name="content-template" />
-  {{ page_header_slot() }}
   {% endif %}
 
   {% if pdf_engine == 'weasyprint' %}
-  {{ institutional_header() }}
+  {{ institutional_header(running=true) }}
   {% endif %}
 
   <div class="report-content">
