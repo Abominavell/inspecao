@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f7f5;
+  --foreground: #1a2e24;
+  --emserh-green: #006633;
+  --emserh-green-dark: #004d26;
+  --emserh-green-light: #e8f3ed;
+  --card: #ffffff;
+  --border: #d8e4dc;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-emserh-green: var(--emserh-green);
+  --color-emserh-green-dark: var(--emserh-green-dark);
+  --color-emserh-green-light: var(--emserh-green-light);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
+}

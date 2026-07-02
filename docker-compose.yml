@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/uploads:/app/uploads
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - DEBUG=${DEBUG:-False}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///data/db.sqlite3}
+      - CORS_ORIGINS=http://localhost:3000
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@ssma.com.br}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend

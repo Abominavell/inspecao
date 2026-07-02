@@ -1,0 +1,11 @@
+{
+  "name": "inspecao_seguranca",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd backend && .venv\\Scripts\\uvicorn app.main:app --reload --port 8000",
+    "dev:frontend": "cd frontend && npm run dev",
+    "seed:checklist": "backend\\.venv\\Scripts\\python scripts\\seed_checklist.py",
+    "seed:sample": "backend\\.venv\\Scripts\\python scripts\\seed_sample_data.py",
+    "test:integration": "backend\\.venv\\Scripts\\python scripts\\test_integration.py"
+  }
+}

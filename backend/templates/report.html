@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:pdf="http://www.xhtml2pdf.com/xhtml2pdf">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório Técnico - {{ unit.name }}</title>
+  <style>
+    {% if pdf_engine == 'weasyprint' %}
+    @page {
+      size: A4;
+      margin: 3.6cm 1.5cm 2cm 2cm;
+      @top-center {
+        content: element(docHeader);
+        vertical-align: bottom;
+      }
+    }
+
+    @page cover {
+      size: A4;
+      margin: 2cm 1.5cm 2cm 2cm;
+      @top-center {
+        content: none;
+      }
+    }
+    {% else %}
+    @page content-template {
+      size: a4 portrait;
+      margin: 1.8cm 1.5cm 2cm 1.5cm;
+    }
+
+    @page cover-template {
+      size: a4 portrait;
+      margin: 2cm 1.5cm 2cm 1.5cm;
+    }
+    {% endif %}
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      color: #000;
+      line-height: 1.35;
+      margin: 0;
+      padding: 0;
+    }
+
+    .cover-page {
+      {% if pdf_engine == 'weasyprint' %}
+      page: cover;
+      {% endif %}
+      page-break-after: always;
+      text-align: right;
+      padding-top: 0.2cm;
+    }
+
+    .cover-body {
+      padding-top: 0.75cm;
+    }
+
+    .cover-hierarchy {
+      margin-bottom: 0.35cm;
+      font-size: 11pt;
+      line-height: 1.15;
+    }
+
+    .cover-hierarchy .label {
+      font-weight: bold;
+      margin: 0;
+      padding: 0;
+      font-size: 11pt;
+    }
+
+    .cover-hierarchy .value {
+      font-weight: normal;
+      font-size: 11pt;
+      margin: 0 0 5pt 0;
+      line-height: 1.15;
+    }
+
+    .cover-title {
+      font-size: 19pt;
+      font-weight: normal;
+      text-align: right;
+      margin: 0.35cm 0 0.2cm 0;
+      line-height: 1.18;
+    }
+
+    .cover-unit {
+      font-size: 16pt;
+      font-weight: bold;
+      text-align: right;
+      margin: 0.15cm 0 0.35cm 0;
+    }
+
+    .cover-dates {
+      text-align: right;
+      font-size: 11pt;
+      margin-top: 0;
+    }
+
+    .cover-dates p {
+      margin: 2pt 0;
+    }
+
+    .page-header {
+      {% if pdf_engine == 'weasyprint' %}
+      position: running(docHeader);
+      {% endif %}
+      width: 100%;
+      margin: 0 0 12pt 0;
+      padding: 0;
+      page-break-inside: avoid;
+      page-break-after: avoid;
+      clear: both;
+    }
+
+    .page-header-slot {
+      margin: 0 0 14pt 0;
+      page-break-inside: avoid;
+      page-break-after: avoid;
+      clear: both;
+    }
+
+    .header-banner {
+      width: 100%;
+      height: auto;
+      max-height: 2.5cm;
+      display: block;
+    }
+
+    .doc-header-box {
+      width: 100%;
+      border: 3px double #000;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .doc-header-box td {
+      vertical-align: middle;
+      padding: 6pt 8pt;
+    }
+
+    .doc-header-logo-cell {
+      width: 30%;
+      border-right: 1px solid #000;
+      text-align: center;
+    }
+
+    .doc-header-logo-img {
+      max-width: 130px;
+      max-height: 42px;
+      width: auto;
+      height: auto;
+      display: block;
+      margin: 0 auto 3pt auto;
+    }
+
+    .doc-header-logo-sub {
+      margin: 0;
+      font-size: 6.5pt;
+      color: #1f5fbf;
+      line-height: 1.1;
+    }
+
+    .doc-header-logo-slogan {
+      margin: 2pt 0 0 0;
+      font-size: 8pt;
+      color: #4aa3df;
+      font-style: italic;
+      line-height: 1.1;
+    }
+
+    .doc-header-title-cell {
+      width: 70%;
+      text-align: center;
+      font-family: "Times New Roman", Times, serif;
+      font-weight: bold;
+      font-size: 11pt;
+      line-height: 1.25;
+      text-transform: uppercase;
+    }
+
+    .doc-header-title-cell p {
+      margin: 0;
+      padding: 0;
+    }
+
+    .report-content {
+      clear: both;
+      margin: 0;
+      padding: 0;
+    }
+
+    .report-section {
+      clear: both;
+      margin: 0 0 16pt 0;
+      padding: 0;
+      {% if pdf_engine == 'weasyprint' %}
+      page-break-inside: avoid;
+      {% endif %}
+    }
+
+    .report-section.allow-break {
+      page-break-inside: auto;
+    }
+
+    .page-break {
+      page-break-before: always;
+      clear: both;
+      height: 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    .sec-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      text-align: justify;
+      font-size: 11pt;
+      margin: 0 0 8pt 0;
+      clear: both;
+    }
+
+    .sec-subtitle {
+      font-weight: bold;
+      text-align: justify;
+      font-size: 11pt;
+      margin: 10pt 0 6pt 0;
+      clear: both;
+    }
+
+    .body-text {
+      text-align: justify;
+      font-size: 11pt;
+      margin: 0 0 8pt 0;
+      clear: both;
+    }
+
+    .body-text strong {
+      font-weight: bold;
+    }
+
+    .info-line,
+    .char-line,
+    .final-line {
+      text-align: justify;
+      font-size: 11pt;
+      margin: 0 0 4pt 0;
+      clear: both;
+    }
+
+    .nota-block {
+      text-align: center;
+      margin: 10pt 0 6pt 0;
+      clear: both;
+    }
+
+    .nota-label {
+      font-size: 14pt;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .nota-sub {
+      font-weight: bold;
+      font-size: 11pt;
+      margin: 6pt 0 0 0;
+    }
+
+    .score-chunk {
+      margin: 0;
+      clear: both;
+    }
+
+    table.score-table,
+    table.nc-table,
+    table.checklist-table {
+      width: 100%;
+      border-collapse: collapse;
+      clear: both;
+    }
+
+    table.score-table {
+      margin: 0 0 8pt 0;
+      font-size: 10.5pt;
+      page-break-inside: auto;
+    }
+
+    table.score-table td {
+      border: 1px solid #000;
+      padding: 4pt 6pt;
+      font-weight: bold;
+      background: #d9d9d9;
+      vertical-align: middle;
+    }
+
+    table.score-table td.nota-title {
+      text-align: center;
+      font-size: 14pt;
+      background: #000000;
+      color: #ffffff;
+    }
+
+    table.score-table td.pontuacao-title {
+      text-align: center;
+      background: #d9d9d9;
+    }
+
+    table.score-table td.section-name {
+      width: 79%;
+      text-align: left;
+    }
+
+    table.score-table td.section-score {
+      width: 21%;
+      text-align: center;
+      color: #00b050;
+    }
+
+    table.nc-table {
+      margin: 10pt 0 16pt 0;
+      font-size: 10.5pt;
+    }
+
+    table.nc-table th,
+    table.nc-table td {
+      border: 1px solid #000;
+      padding: 6pt 5pt;
+      vertical-align: top;
+    }
+
+    table.nc-table th {
+      font-weight: bold;
+      text-align: center;
+      text-transform: uppercase;
+      background: #fff;
+    }
+
+    table.nc-table tr {
+      page-break-inside: avoid;
+    }
+
+    table.nc-table td.item-col {
+      width: 8%;
+      text-align: center;
+      font-weight: bold;
+      vertical-align: middle;
+      color: #ff0000;
+    }
+
+    table.nc-table td.desc-col {
+      width: 37%;
+      text-align: justify;
+    }
+
+    table.nc-table td.photo-col {
+      width: 25%;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    table.nc-table td.rec-col {
+      width: 30%;
+      text-align: justify;
+    }
+
+    .nc-photo {
+      max-width: 100%;
+      max-height: 120px;
+      height: auto;
+      display: block;
+      margin: 4pt auto;
+    }
+
+    .address-photo {
+      max-width: 100%;
+      max-height: 240px;
+      height: auto;
+      display: block;
+      margin: 6pt 0;
+    }
+
+    table.checklist-table {
+      margin: 0 0 12pt 0;
+      font-size: 9pt;
+      page-break-inside: auto;
+    }
+
+    table.checklist-table th,
+    table.checklist-table td {
+      border: 1px solid #000;
+      padding: 4pt 5pt;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    table.checklist-table th {
+      font-weight: bold;
+      background: #f2f2f2;
+      text-align: center;
+    }
+
+    table.checklist-table tr {
+      page-break-inside: avoid;
+    }
+
+    table.checklist-table td.item-col {
+      width: 10%;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    table.checklist-table td.question-col {
+      width: 62%;
+      text-align: justify;
+    }
+
+    table.checklist-table td.status-col {
+      width: 18%;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .status-c { color: #00b050; }
+    .status-nc { color: #ff0000; }
+    .status-na { color: #555555; }
+
+    .checklist-block {
+      margin: 0 0 14pt 0;
+      clear: both;
+      {% if pdf_engine == 'weasyprint' %}
+      page-break-inside: avoid;
+      {% endif %}
+    }
+
+    .checklist-section-title {
+      font-weight: bold;
+      font-size: 10pt;
+      margin: 8pt 0 6pt 0;
+      text-transform: uppercase;
+      clear: both;
+    }
+  </style>
+</head>
+<body>
+
+  {% macro institutional_header() %}
+  <div class="page-header">
+    {% if header_banner_uri %}
+    <img class="header-banner" src="{{ header_banner_uri }}" alt="Cabeçalho EMSERH">
+    {% else %}
+    <table class="doc-header-box">
+      <tr>
+        <td class="doc-header-logo-cell">
+          {% if logo_uri %}
+          <img class="doc-header-logo-img" src="{{ logo_uri }}" alt="EMSERH">
+          {% else %}
+          <strong style="color:#6cb33f;font-size:14pt;">EMSERH+</strong>
+          {% endif %}
+          <p class="doc-header-logo-sub">Empresa Maranhense de Serviços Hospitalares</p>
+          <p class="doc-header-logo-slogan">Por uma saúde melhor</p>
+        </td>
+        <td class="doc-header-title-cell">
+          <p>Relatório Técnico de Diagnóstico de Saúde</p>
+          <p>Segurança e Meio Ambiente</p>
+        </td>
+      </tr>
+    </table>
+    {% endif %}
+  </div>
+  {% endmacro %}
+
+  {% macro page_header_slot() %}
+  <div class="page-header-slot">
+    {{ institutional_header() }}
+  </div>
+  {% endmacro %}
+
+  {% macro new_page() %}
+  <div class="page-break"></div>
+  {% if pdf_engine == 'xhtml2pdf' %}
+  {{ page_header_slot() }}
+  {% endif %}
+  {% endmacro %}
+
+  {% if pdf_engine == 'xhtml2pdf' %}
+  <pdf:nexttemplate name="cover-template" />
+  {% endif %}
+
+  <div class="cover-page">
+    <div class="cover-body">
+      <div class="cover-hierarchy">
+        <p class="label">{{ ssma.diretoria_executiva }}</p>
+        <p class="value">{{ ssma.diretor_executivo }}</p>
+        <p class="label">{{ ssma.gerencia_geral }}:</p>
+        <p class="value">{{ ssma.gerente_geral }}</p>
+        <p class="label">{{ ssma.gerencia_sst }}</p>
+        <p class="value">{{ ssma.gerente_sst }}</p>
+        <p class="label">{{ ssma.gerencia_meio_ambiente }}</p>
+        <p class="value">{{ ssma.gerente_meio_ambiente }}</p>
+        <p class="label">Regional:</p>
+        <p class="value">{{ unit.regional or ssma.regional }}</p>
+        <p class="label">Cidade:</p>
+        <p class="value">{{ unit.city or ssma.cidade }}</p>
+      </div>
+
+      <p class="cover-title">
+        Relatório tecnico de DIAGNÓSTICO DE<br>
+        SAÚDE, SEGURANÇA E MEIO<br>
+        AMBIENTE
+      </p>
+      <p class="cover-unit">{{ unit.name }}</p>
+      <div class="cover-dates">
+        <p>data vistoria: {{ inspection.inspection_date.strftime('%d/%m/%Y') }}</p>
+        <p>Data apresentação do relatório: {{ inspection.report_date.strftime('%d/%m/%Y') }}</p>
+      </div>
+    </div>
+  </div>
+
+  {% if pdf_engine == 'xhtml2pdf' %}
+  <pdf:nexttemplate name="content-template" />
+  {{ page_header_slot() }}
+  {% endif %}
+
+  {% if pdf_engine == 'weasyprint' %}
+  {{ institutional_header() }}
+  {% endif %}
+
+  <div class="report-content">
+
+  <div class="report-section">
+    <p class="sec-title">Informações Gerais da Unidade</p>
+    {% if inspection.general_info_text %}
+    <p class="body-text">{{ inspection.general_info_text | replace('\n', '<br>') | safe }}</p>
+    {% else %}
+    <p class="body-text">
+      <strong>Este Relatório Técnico de Diagnóstico de Saúde e Segurança do Trabalho</strong>
+      foi realizado na unidade {{ unit.name }}, composta por:
+    </p>
+    {% endif %}
+    <p class="info-line">Coordenadora Administrativo: {{ unit.admin_coordinator or '—' }}</p>
+    <p class="info-line">Diretor Geral: {{ unit.general_director or '—' }}</p>
+    <p class="info-line">Porte da Unidade: {{ unit.unit_type or '—' }}</p>
+    <p class="info-line">Quantidade de Funcionários: {{ unit.employee_count }}</p>
+  </div>
+
+  <div class="report-section">
+    <p class="sec-title">Metodologia</p>
+    <div class="body-text">{{ inspection.methodology_text | replace('\n', '<br>') | safe }}</div>
+    <p class="sec-title">Objetivos do Levantamento Técnico;</p>
+    <div class="body-text">{{ inspection.objectives_text | replace('\n', '<br>') | safe }}</div>
+  </div>
+
+  <div class="report-section">
+    <p class="sec-title">Localização</p>
+    <p class="body-text">A unidade está localizada: Endereço:&nbsp;{{ unit.address or '—' }}</p>
+    {% if address_photo_uri %}
+    <p class="body-text" style="margin-top: 8px;">
+      <img class="address-photo" src="{{ address_photo_uri }}" alt="Foto do local">
+    </p>
+    {% endif %}
+    <p class="sec-subtitle">Caracterização da Unidade</p>
+    {% for line in unit.characterization.split('\n') %}
+      {% if line.strip() %}
+      <p class="char-line">{{ line.strip() }}</p>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="report-section allow-break">
+    <p class="sec-title">Aderência de Conformidades</p>
+    <p class="body-text">
+      Durante a inspeção, foram identificadas as conformidades da unidade. Os dados apresentados a seguir
+      demonstram o panorama geral das conformidades e não conformidades observadas.
+    </p>
+    <table class="score-table">
+      <tbody>
+        <tr>
+          <td colspan="2" class="nota-title">NOTA</td>
+        </tr>
+        <tr>
+          <td colspan="2" class="pontuacao-title">Pontuação da Inspeção</td>
+        </tr>
+        {% for s in score_sections %}
+        <tr>
+          <td class="section-name">{{ s.section_order | fmt_section_title(s.section_title) }}</td>
+          <td class="section-score">{{ s.score | fmt_score }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {{ new_page() }}
+
+  <div class="report-section allow-break">
+    <p class="sec-title">Não Conformidades Identificadas – Saúde e Segurança do Trabalho</p>
+    {% if non_conformities %}
+    <table class="nc-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Descrição / Normativa</th>
+          <th>Registro Fotográfico</th>
+          <th>Recomendações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for nc in non_conformities %}
+        <tr>
+          <td class="item-col">{{ nc.item_code }}</td>
+          <td class="desc-col">
+            <strong>Descrição:</strong> {{ nc.description }}
+            {% if nc.normative %}<br><strong>Normativa:</strong> {{ nc.normative }}{% endif %}
+          </td>
+          <td class="photo-col">
+            {% for uri in nc.photo_data_uris %}
+            <img class="nc-photo" src="{{ uri }}" alt="Registro fotográfico">
+            {% endfor %}
+          </td>
+          <td class="rec-col">{{ nc.recommendation or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="body-text">Nenhuma não conformidade registrada nesta inspeção.</p>
+    {% endif %}
+  </div>
+
+  <div class="report-section">
+    <p class="sec-title">Limitações do Relatório</p>
+    {% for line in inspection.limitations_text.split('\n') %}
+      {% if line.strip() %}
+      <p class="final-line">{{ line.strip() }}</p>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="report-section">
+    <p class="sec-title">Considerações Finais</p>
+    {% for line in inspection.final_considerations_text.split('\n') %}
+      {% if line.strip() %}
+      <p class="final-line">{{ line.strip() }}</p>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  {{ new_page() }}
+
+  <div class="report-section allow-break">
+    <p class="sec-title">Registro Completo do Checklist</p>
+    <p class="body-text">
+      Relação de todos os itens marcados durante a inspeção, conforme preenchimento no checklist técnico.
+    </p>
+    {% if checklist_summary %}
+      {% for section in checklist_summary %}
+      <div class="checklist-block">
+        <p class="checklist-section-title">{{ section.section_order | fmt_section_title(section.section_title) }}</p>
+        <table class="checklist-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Pergunta</th>
+              <th>Resposta</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in section.checklist_items %}
+            <tr>
+              <td class="item-col">{{ item.item_code }}</td>
+              <td class="question-col">{{ item.question }}</td>
+              <td class="status-col status-{{ item.status|lower }}">{{ item.status_label }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endfor %}
+    {% else %}
+    <p class="body-text">Nenhum item do checklist foi marcado nesta inspeção.</p>
+    {% endif %}
+  </div>
+  </div>
+</body>
+</html>
