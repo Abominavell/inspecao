@@ -71,6 +71,14 @@ export default function RevisaoPage() {
   const load = useCallback(() => {
     setReady(false);
     return (async () => {
+      if (local?.server_id && clientId && navigator.onLine) {
+        try {
+          const { hydrateInspectionFromServer } = await import("@/lib/hydrateInspectionFromServer");
+          await hydrateInspectionFromServer(clientId, local.server_id);
+        } catch {
+          /* ignore */
+        }
+      }
       const defaults =
         (await getCachedReference<SsmaConfig>("ssma")) ?? {
           diretor_executivo: "",
@@ -118,7 +126,7 @@ export default function RevisaoPage() {
       }
       setReady(true);
     })();
-  }, [local]);
+  }, [local, clientId]);
 
   useEffect(() => {
     if (!localLoading) load();

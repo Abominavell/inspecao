@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from "react";
 import type { ChecklistSection, Completeness } from "@/lib/api";
+import { api } from "@/lib/api";
 import type { LocalInspection } from "@/lib/db";
 import { computeLocalCompleteness, type LiveChecklistAnswer } from "@/lib/completeness";
+import { getCachedReference } from "@/lib/db/repositories/inspectionRepo";
+import {
+  answersToLiveMap,
+  hydrateInspectionFromServer,
+} from "@/lib/hydrateInspectionFromServer";
 
 type Options = {
   sections?: ChecklistSection[];
@@ -12,8 +18,20 @@ type Options = {
   enabled?: boolean;
 };
 
-/** Calcula pendências a partir do IndexedDB + estado do formulário (fonte fiel ao checklist). */
-export function useLocalCompleteness(
+function pickCompleteness(local: Completeness, server: Completeness | null): Completeness {
+  if (!server) return local;
+  if (server.ready_for_report) return server;
+  if (server.checklist_answered > local.checklist_answered) return server;
+  if (local.checklist_answered > server.checklist_answered) return local;
+  if (server.pending_count < local.pending_count) return server;
+  return local;
+}
+
+/**
+ * Pendências: calcula localmente e, se online com server_id, hidrata do servidor
+ * e usa a completude mais avançada (evita cache local desatualizado após sync).
+ */
+export function useInspectionCompleteness(
   clientId: string,
   local: LocalInspection | null | undefined,
   revisionKey: string,
@@ -21,6 +39,7 @@ export function useLocalCompleteness(
 ): Completeness | null {
   const [completeness, setCompleteness] = useState<Completeness | null>(null);
   const enabled = options.enabled ?? true;
+  const serverId = local?.server_id;
 
   useEffect(() => {
     if (!enabled || !clientId || !local) {
@@ -28,21 +47,52 @@ export function useLocalCompleteness(
       return;
     }
     let active = true;
-    void computeLocalCompleteness({
-      clientId,
-      local,
-      sections: options.sections,
-      liveAnswers: options.liveAnswers,
-      liveNcPhotoCounts: options.liveNcPhotoCounts,
-    }).then((result) => {
-      if (active) setCompleteness(result);
-    });
+
+    const inspection = local;
+    async function run() {
+      let liveAnswers = options.liveAnswers;
+      let serverComp: Completeness | null = null;
+
+      if (serverId && typeof navigator !== "undefined" && navigator.onLine) {
+        try {
+          if (!liveAnswers) {
+            await hydrateInspectionFromServer(clientId, serverId);
+          }
+          const sections =
+            options.sections ?? (await getCachedReference<ChecklistSection[]>("checklist")) ?? [];
+          const [serverAnswers, sc] = await Promise.all([
+            api.getAnswers(serverId),
+            api.getCompleteness(serverId),
+          ]);
+          serverComp = sc;
+          if (!liveAnswers && sections.length > 0) {
+            liveAnswers = answersToLiveMap(sections, serverAnswers);
+          }
+        } catch {
+          /* offline ou erro de rede */
+        }
+      }
+
+      const localComp = await computeLocalCompleteness({
+        clientId,
+        local: inspection,
+        sections: options.sections,
+        liveAnswers,
+        liveNcPhotoCounts: options.liveNcPhotoCounts,
+      });
+
+      if (active) setCompleteness(pickCompleteness(localComp, serverComp));
+    }
+
+    void run();
     return () => {
       active = false;
     };
-    // revisionKey agrega mudanças em liveAnswers / fotos
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId, local, revisionKey, enabled]);
+  }, [clientId, local, revisionKey, enabled, serverId]);
 
   return completeness;
 }
+
+/** @deprecated Use useInspectionCompleteness */
+export const useLocalCompleteness = useInspectionCompleteness;

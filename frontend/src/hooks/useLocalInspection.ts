@@ -26,8 +26,18 @@ export function useLocalInspection(idOrClientId: string | number) {
           const server = await api.getInspection(Number(cid));
           const { upsertLocalFromServer } = await import("@/lib/db/repositories/inspectionRepo");
           record = await upsertLocalFromServer(server);
+          const { hydrateInspectionFromServer } = await import("@/lib/hydrateInspectionFromServer");
+          await hydrateInspectionFromServer(record.client_id, server.id);
         } catch {
           // keep null
+        }
+      } else if (record?.server_id && navigator.onLine) {
+        try {
+          const { hydrateInspectionFromServer } = await import("@/lib/hydrateInspectionFromServer");
+          await hydrateInspectionFromServer(record.client_id, record.server_id);
+          record = (await getLocalInspection(cid)) ?? record;
+        } catch {
+          /* ignore */
         }
       }
       if (active) {
