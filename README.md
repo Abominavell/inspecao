@@ -73,6 +73,10 @@ ADMIN_PASSWORD=admin123
 docker compose up --build
 ```
 
+## Deploy em produção
+
+Guia completo: [docs/deploy.md](docs/deploy.md) — VPS com Docker + Nginx na porta 80.
+
 ## Pontuação
 
 Por seção: `C / (C + NC + NA)` — mesma regra do Excel Anexo IV.
