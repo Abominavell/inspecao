@@ -33,7 +33,9 @@ No Registro.br, Cloudflare ou onde o domínio está:
 
 | Tipo | Nome / Host | Valor | TTL |
 |------|-------------|-------|-----|
-| **A** | `apiinspecaoiadvh` | IP do servidor (ex. `45.x.x.x`) | 300–3600 |
+| **A** | `apiinspecaoiadvh` | **76.13.237.31** | 300–3600 |
+
+IP do VPS deste deploy: **76.13.237.31** (`curl -4 ifconfig.me` no servidor).
 
 Isso cria `apiinspecaoiadvh.org.br` → seu VPS.
 
