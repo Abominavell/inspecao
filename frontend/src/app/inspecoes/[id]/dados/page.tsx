@@ -123,6 +123,9 @@ export default function DadosPage() {
         <ReadOnlyBanner
           status={local?.is_archived ? "archived" : "finalizado"}
           isStaff={isStaff}
+          clientId={clientId}
+          serverId={local?.server_id}
+          unitName={local?.unit_name ?? inspection?.unit?.name}
           onReopen={async () => {
             if (local?.server_id) {
               await api.reopenInspection(local.server_id);

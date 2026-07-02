@@ -254,6 +254,9 @@ export default function ChecklistPage() {
         <ReadOnlyBanner
           status={local?.is_archived ? "archived" : "finalizado"}
           isStaff={isStaff}
+          clientId={clientId}
+          serverId={local?.server_id}
+          unitName={local?.unit_name ?? inspection?.unit?.name}
           onReopen={async () => {
             if (local?.server_id) {
               const { api } = await import("@/lib/api");
