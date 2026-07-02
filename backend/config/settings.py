@@ -22,8 +22,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
-    "accounts",
-    "inspections",
+    "accounts.apps.AccountsConfig",
+    "inspections.apps.InspectionsConfig",
 ]
 
 MIDDLEWARE = [

@@ -22,7 +22,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 python manage.py migrate
-python manage.py seed_checklist "C:\Users\...\Downloads\Anexo IV - Check  List - Diagnóstico de Saúde e Segurança.xlsx"
+# checklist Anexo IV é importado automaticamente no primeiro migrate
 
 python manage.py runserver
 ```
@@ -43,7 +43,7 @@ Acesse: http://localhost:3000 — Login: `admin@ssma.com.br` / `admin123`
 |---------|-----------|
 | `python manage.py runserver` | Inicia a API em http://127.0.0.1:8000 |
 | `python manage.py migrate` | Aplica migrações do banco |
-| `python manage.py seed_checklist [arquivo.xlsx]` | Importa o checklist |
+| `python manage.py seed_checklist` | Importa checklist embutido (Anexo IV) ou de um `.xlsx` opcional |
 | `python manage.py createsuperuser` | Cria usuário admin adicional |
 
 ## Fluxo de uso

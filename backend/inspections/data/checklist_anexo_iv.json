@@ -1,0 +1,694 @@
+{
+  "sections": [
+    {
+      "order": 1,
+      "title": "1. AREAS EXTERNAS",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "1.1",
+          "question": "Os pisos/calçadas,rampas de acesso estão em boas condições?"
+        },
+        {
+          "order": 2,
+          "item_code": "1.2",
+          "question": "A fachada da unidade está com algum abalo estrutural?"
+        },
+        {
+          "order": 3,
+          "item_code": "1.3",
+          "question": "Existe acúmulo de material e equipamentos no perimetro da unidade?"
+        },
+        {
+          "order": 4,
+          "item_code": "1.4",
+          "question": "As árvores possuem risco de queda de galho?"
+        },
+        {
+          "order": 5,
+          "item_code": "1.5",
+          "question": "As raizes das arvores estão expostas com risco de queda para o colaborador?"
+        },
+        {
+          "order": 6,
+          "item_code": "1.6",
+          "question": "Os estacionamentos estão devidamente sinalizados? (Placas de velocidade, estacione de ré)"
+        },
+        {
+          "order": 7,
+          "item_code": "1.7",
+          "question": "As estruturas que estão expostas ao risco de colisão com veículo possuem proteções adequadas (barreiras físicas) após análise de risco?"
+        },
+        {
+          "order": 8,
+          "item_code": "1.8",
+          "question": "Tampas e caixas de cirtenas estão avariadas apresentando algum risco?"
+        },
+        {
+          "order": 9,
+          "item_code": "1.9",
+          "question": "Estrutura da(s) caixas de água da unidade estão em condições adequadas e seguras?"
+        },
+        {
+          "order": 10,
+          "item_code": "1.10",
+          "question": "Caixa de água possue acesso seguro conforme requisitos minimos legais para realização da atividade de limpeza e desinfecção?"
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "title": "2. SUBESTAÇÃO",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "2.1",
+          "question": "O acesso é restrito, trancado e existe sinalização de advertência e de segurança ?"
+        },
+        {
+          "order": 2,
+          "item_code": "2.2",
+          "question": "As grades de isolamentos da subestação estão aterradas?"
+        },
+        {
+          "order": 3,
+          "item_code": "2.3",
+          "question": "A subestação está isenta de umidade e infiltração?"
+        },
+        {
+          "order": 4,
+          "item_code": "2.4",
+          "question": "Existe tapete/extrado isolante e vara de manobra?"
+        },
+        {
+          "order": 5,
+          "item_code": "2.5",
+          "question": "Existe sinalização de segurança interna e externa?"
+        },
+        {
+          "order": 6,
+          "item_code": "2.6",
+          "question": "Existe lampada(s) de emergências?"
+        },
+        {
+          "order": 7,
+          "item_code": "2.7",
+          "question": "Possui extintor de incêndio?"
+        },
+        {
+          "order": 8,
+          "item_code": "2.8",
+          "question": "A unidade/região possui um profissional legalmente habilitado e um profissional capacitado responsável por toda a instalação elétrica da planta?"
+        },
+        {
+          "order": 9,
+          "item_code": "2.9",
+          "question": "As subestações possuem no mínimo duas vestimentas retardantes à chama com balaclava e dois pares de luva isolante, de acordo com a classe de tensão instalada?"
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "title": "3. GRUPO GERADOR",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "3.1",
+          "question": "O acesso é restrito, trancado e existe sinalização de advertência e de segurança ?"
+        },
+        {
+          "order": 2,
+          "item_code": "3.2",
+          "question": "Os respiros dos tanques estão desobstruídos?"
+        },
+        {
+          "order": 3,
+          "item_code": "3.3",
+          "question": "Existe sinalização de segurança no tanque diesel?"
+        },
+        {
+          "order": 4,
+          "item_code": "3.4",
+          "question": "A carcaça do grupo gerador está aterrada eletricamente?"
+        },
+        {
+          "order": 5,
+          "item_code": "3.5",
+          "question": "As partes móveis estão protegidas?"
+        },
+        {
+          "order": 6,
+          "item_code": "3.6",
+          "question": "Existe lampada(s) de emergências?"
+        },
+        {
+          "order": 7,
+          "item_code": "3.7",
+          "question": "Possui extintor de incêndio?"
+        },
+        {
+          "order": 8,
+          "item_code": "3.8",
+          "question": "Existe relatório/ check-list da empresa terceirizada que executa a manutenção?"
+        },
+        {
+          "order": 9,
+          "item_code": "3.9",
+          "question": "O grupo gerador esta em automático?"
+        },
+        {
+          "order": 10,
+          "item_code": "3.10",
+          "question": "Existe KIT de Emergência para Vazamento de Produto Químico?"
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "title": "4. SISTEMA SPDA (Sistema de Proteção contra Descargas Atmosféricas)",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "4.1",
+          "question": "Existe sistema de SPDA no prédio?"
+        },
+        {
+          "order": 2,
+          "item_code": "4.2",
+          "question": "O sistema SPDA está laudado?"
+        },
+        {
+          "order": 3,
+          "item_code": "4.3",
+          "question": "Existe caixa(s) de inspeção(s)?"
+        },
+        {
+          "order": 4,
+          "item_code": "4.4",
+          "question": "O estado dos isoladores (ou fixadores) estão satisfatórios?"
+        },
+        {
+          "order": 5,
+          "item_code": "4.5",
+          "question": "As conexões estão firmes e livres de corrosão e  as peças soltas?"
+        },
+        {
+          "order": 6,
+          "item_code": "4.6",
+          "question": "As estruturas de proteção contra descarga atmosférica são inspecionadas periodicamente e a resistividade dos sistemas medidos anualmente com emissão de laudo por profissional habilitado?"
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "title": "5. CENTRAL DE GLP (Gás Liquefeito de Petróleo)",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "5.1",
+          "question": "Existe livro de registro de manutenção?"
+        },
+        {
+          "order": 2,
+          "item_code": "5.2",
+          "question": "Existe cilindros transportáveis (P-13 ; P-20) na central de GLP?"
+        },
+        {
+          "order": 3,
+          "item_code": "5.3",
+          "question": "Os manômetros estão funcionando e a calibração está dentro do prazo de validade?"
+        },
+        {
+          "order": 4,
+          "item_code": "5.4",
+          "question": "A porta de abrigo está em boa condição?"
+        },
+        {
+          "order": 5,
+          "item_code": "5.5",
+          "question": "A porta de acesso permanece trancada, impedindo a entrada de pessoas não autorizadas?"
+        },
+        {
+          "order": 6,
+          "item_code": "5.6",
+          "question": "As placas de INFLAMÁVEL, PROIBIDO FUMAR e ACESSO RESTRITO estão afixada no portão do abrigo e estão legíveis?"
+        },
+        {
+          "order": 7,
+          "item_code": "5.7",
+          "question": "Existe vaga reservada para estacionamento de veículo abastecedor?"
+        },
+        {
+          "order": 8,
+          "item_code": "5.8",
+          "question": "Existe extintor?"
+        },
+        {
+          "order": 9,
+          "item_code": "5.9",
+          "question": "A mangueira de abastecimento não passa nas proximidades de fonte de calor e de ignições?"
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "title": "6. CASA DE GAS MEDICINAL",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "6.1",
+          "question": "Existe prontuário no local?"
+        },
+        {
+          "order": 2,
+          "item_code": "6.2",
+          "question": "As portas de acesso são restritas e trancadas?"
+        },
+        {
+          "order": 3,
+          "item_code": "6.3",
+          "question": "As placas de INFLAMÀVEL, PROIBIDO FUMAR e ACESSO RESTRITO estão afixada no portão do abrigo e estão legíveis?"
+        },
+        {
+          "order": 4,
+          "item_code": "6.4",
+          "question": "Os cilindros de gases medicinais estão presos por corrente?"
+        },
+        {
+          "order": 5,
+          "item_code": "6.5",
+          "question": "Os cilidros de gases medicinais fora de uso possuem capacete?"
+        }
+      ]
+    },
+    {
+      "order": 7,
+      "title": "7. AMBIENTE HOSPITALAR",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "7.1",
+          "question": "Piso e paredes encontram-se adequados e em bom estado de conservação?"
+        },
+        {
+          "order": 2,
+          "item_code": "7.2",
+          "question": "Teto/forro encontram-se adequados e em bom estado de conservação?"
+        },
+        {
+          "order": 3,
+          "item_code": "7.3",
+          "question": "Portas, janelas,rampas e corrimãos instalados estão em boas condições de abertura e fechamento?"
+        },
+        {
+          "order": 4,
+          "item_code": "7.4",
+          "question": "O ambiente encontra-se limpo e organizado?"
+        },
+        {
+          "order": 5,
+          "item_code": "7.5",
+          "question": "Layouts,acessos, caminhos e rotas seguras estão devidamente sinalizados ?"
+        },
+        {
+          "order": 6,
+          "item_code": "7.6",
+          "question": "Foi elaborado o PMOC (Plano de Manutenção, Operação e Controle) referente às instalações de ar condicionado ?"
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "title": "8. VESTIÁRIO, RESPOUSOS,COZINHA INDUSTRIAL E REFEITÓRIO",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "8.1",
+          "question": "Os dormitórios e ou repousos atendem requisitos da NR-24 e NR-32 (colchões, lençóis, fronhas, cobertores e travesseiros limpos e higienizados, adequados às condições climáticas)? Possue instalações sanitárias e em boas condições?"
+        },
+        {
+          "order": 2,
+          "item_code": "8.2",
+          "question": "Os vestiários estão em boa condição de uso? Possui armarios, chuveiros, sanitário próprio para uso exclusivo dos trabalhadores que manipulam gêneros alimentícios, separados por sexo?"
+        },
+        {
+          "order": 3,
+          "item_code": "8.3",
+          "question": "Funcionários que manipulam alimentos possuem seu próprio vestiário e banheiro exclusivo,separados por sexo?"
+        },
+        {
+          "order": 4,
+          "item_code": "8.4",
+          "question": "Unidade possui cozinha industrial? Possui sistema de cllimatização e exaustão? Possui coifa?Possue telas de proteção contra vetores?"
+        },
+        {
+          "order": 5,
+          "item_code": "8.5",
+          "question": "As mangueiras de gás GLP e ao válvula estão dentro do prazo de validade?"
+        },
+        {
+          "order": 6,
+          "item_code": "8.6",
+          "question": "As grades, telas, ralos e galerias estão em bom estado de conservação?"
+        }
+      ]
+    },
+    {
+      "order": 9,
+      "title": "9. ERGONOMIA",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "9.1",
+          "question": "As cadeiras e outros mobiliários estão adequados para as atividades realizadas?"
+        },
+        {
+          "order": 2,
+          "item_code": "9.2",
+          "question": "O transporte de pessoas e materiais é feito adequadamente e a carga não está obstruindo a visão?"
+        },
+        {
+          "order": 3,
+          "item_code": "9.3",
+          "question": "O ambiente possui boa iluminação para realização das atividades?"
+        },
+        {
+          "order": 4,
+          "item_code": "9.4",
+          "question": "O ambiente atende as condições de conforto térmico? ( Avaliação qualitativa)"
+        },
+        {
+          "order": 5,
+          "item_code": "9.5",
+          "question": "Foi elaborada e AET - Análise Ergonomica do Trabalho ?"
+        }
+      ]
+    },
+    {
+      "order": 10,
+      "title": "10. EQUIPAMENTOS / FERRAMENTAS / MATERIAIS DE TRABALHO/ INSTALAÇÃO",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "10.1",
+          "question": "Macas, camas, poltronas e cadeiras de rodas apresentam boas condições de segurança e uso?"
+        },
+        {
+          "order": 2,
+          "item_code": "10.2",
+          "question": "Treinamento de máquinas e equipamentos estão em dias (colaborador foi treinado para manusear o equipamento que utiliza atualmente, existe POP, etc.)?"
+        },
+        {
+          "order": 3,
+          "item_code": "10.3",
+          "question": "Caso exista vasos de pressão, os prontuários estão atualizados ?"
+        }
+      ]
+    },
+    {
+      "order": 11,
+      "title": "11. INSTALAÇÕES ELÉTRICAS",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "11.1",
+          "question": "Os fios dos equipamentos estão organizados /não estão expostos em áreas de circulação?"
+        },
+        {
+          "order": 2,
+          "item_code": "11.2",
+          "question": "As tomadas e interruptores estão em condições de segurança?"
+        },
+        {
+          "order": 3,
+          "item_code": "11.3",
+          "question": "Os equipamentos elétricos estão em boas condições de uso?"
+        },
+        {
+          "order": 4,
+          "item_code": "11.4",
+          "question": "As lâmpadas estão em perfeitas condições de uso?"
+        },
+        {
+          "order": 5,
+          "item_code": "11.5",
+          "question": "As fiações encontram-se em boas condições, sem exposição ou partes desencapadas?"
+        },
+        {
+          "order": 6,
+          "item_code": "11.6",
+          "question": "A unidade possui Prontuário Elétrico?"
+        },
+        {
+          "order": 7,
+          "item_code": "11.7",
+          "question": "Os quadros de distribuição de energia estão devidamente fechados, sinalizados e desobstruídos?"
+        },
+        {
+          "order": 8,
+          "item_code": "11.8",
+          "question": "A unidade possui IT Médico?  que visa garantir a manutenção de serviços mesmo em caso de primeira falta a terra nas instalações elétricas nos Estabelecimentos Assistenciais à Saúde (EAS)."
+        },
+        {
+          "order": 9,
+          "item_code": "11.9",
+          "question": "As tomadas instaladas nas áreas operacionais e de manutenção são do tipo blindadas?"
+        },
+        {
+          "order": 10,
+          "item_code": "11.10",
+          "question": "Existem DR como proteção adicional contra-choques via contato direto ou indireto, para casos que ocorram falhas de outros meios de proteção e de descuido ou imprudência do usuário? Exemplo de áreas molhadas;"
+        }
+      ]
+    },
+    {
+      "order": 12,
+      "title": "12. SEGURANÇA CONTRA INCÊNDIO",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "12.1",
+          "question": "Existe o projeto do SPCI? (Extintor, hidrante, rota de fuga, iluminação de emergência)"
+        },
+        {
+          "order": 2,
+          "item_code": "12.2",
+          "question": "O sistema SPCI está funcionado?"
+        },
+        {
+          "order": 3,
+          "item_code": "12.3",
+          "question": "Os equipamentos do SPCI foram instalados conforme o projeto?"
+        },
+        {
+          "order": 4,
+          "item_code": "12.4",
+          "question": "Os extintores/ hidrantes estão em condições adequadas de uso?"
+        },
+        {
+          "order": 5,
+          "item_code": "12.5",
+          "question": "Os extintores estão dentro da validade?"
+        },
+        {
+          "order": 6,
+          "item_code": "12.6",
+          "question": "O PECIP/PAE (Plano de Emergência Contra Incêndio e Pânico) está atualizado?"
+        },
+        {
+          "order": 7,
+          "item_code": "12.7",
+          "question": "Os treinamentos de brigadista voluntário estão atualizados?"
+        }
+      ]
+    },
+    {
+      "order": 13,
+      "title": "13. PRODUTOS QUÍMICOS",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "13.1",
+          "question": "Os produtos químicos estão armazenados adequadamente?"
+        },
+        {
+          "order": 2,
+          "item_code": "13.2",
+          "question": "Os produtos químicos estão com a rotulagem correta de identificação e prazo de validade?"
+        },
+        {
+          "order": 3,
+          "item_code": "13.3",
+          "question": "Há disponível no local cópia das FD'S (Ficha de Dados de Segurança) e os colaboradores sabem onde estão localizadas ?"
+        }
+      ]
+    },
+    {
+      "order": 14,
+      "title": "14. RESÍDUOS, ORGANIZAÇÃO E LIMPEZA",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "14.1",
+          "question": "Os RSS (Resíduos comuns, infectantes e perfurocortantes estão segregados corretamente?"
+        },
+        {
+          "order": 2,
+          "item_code": "14.2",
+          "question": "As lixeiras estão identificadas e em local adequado?"
+        },
+        {
+          "order": 3,
+          "item_code": "14.3",
+          "question": "O abrigo de RS encontra-se limpo e organizado?"
+        },
+        {
+          "order": 4,
+          "item_code": "14.4",
+          "question": "O abrigo de RSS temporário (expurgo) encontra-se higienizado e organizado?"
+        },
+        {
+          "order": 5,
+          "item_code": "14.5",
+          "question": "DML encontra-se higienizado e organizado?"
+        }
+      ]
+    },
+    {
+      "order": 15,
+      "title": "15. CAIXA COLETORA PARA PERFUROCORTANTES",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "15.1",
+          "question": "As caixas coletoras para perfurocortantes estão montadas corretamente e em suporte apropriados?"
+        },
+        {
+          "order": 2,
+          "item_code": "15.2",
+          "question": "A altura do suporte está adequada? ( média de 1,10 m)"
+        },
+        {
+          "order": 3,
+          "item_code": "15.3",
+          "question": "Está sendo respeitada a linha limite de preenchimento das caixas coletoras?"
+        }
+      ]
+    },
+    {
+      "order": 16,
+      "title": "16. NR 32",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "16.1",
+          "question": "Os funcionários estão utilizando calçados fechados?"
+        },
+        {
+          "order": 2,
+          "item_code": "16.2",
+          "question": "Os profissionais estão trabalhando sem a utilização de adornos?"
+        },
+        {
+          "order": 3,
+          "item_code": "16.3",
+          "question": "Os profissionais estão utilizando vestimentas adequadas?"
+        },
+        {
+          "order": 4,
+          "item_code": "16.4",
+          "question": "As torneiras possuem fechamento sem contato manual?"
+        },
+        {
+          "order": 5,
+          "item_code": "16.5",
+          "question": "Possui PPRAMPC - Plano de Prevenção de Riscos de Acidentes com Materiais Perfurocortantes?"
+        }
+      ]
+    },
+    {
+      "order": 17,
+      "title": "17. EPI's",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "17.1",
+          "question": "Os funcionários estão utilizando os EPI´s adequadamente durante as atividades realizadas?"
+        },
+        {
+          "order": 2,
+          "item_code": "17.2",
+          "question": "Os EPI´s estão a disposição em condições de uso e higiene adequados?"
+        },
+        {
+          "order": 3,
+          "item_code": "17.3",
+          "question": "Existe ficha de EPI preenchidas?"
+        }
+      ]
+    },
+    {
+      "order": 18,
+      "title": "18. AVALIAÇÃO DE RESULTADOS DA CIPA",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "18.1",
+          "question": "A unidade possui CIPA (Comissão Interna de Prevenção de Acidentes e Assédio)?"
+        },
+        {
+          "order": 2,
+          "item_code": "18.2",
+          "question": "As reuniões estão sendo realizadas?"
+        }
+      ]
+    },
+    {
+      "order": 19,
+      "title": "19. CONHECIMENTO DO COLABORADOR",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "19.1",
+          "question": "O colaborador sabe informar os Fluxos de acidente de trabalho?"
+        },
+        {
+          "order": 2,
+          "item_code": "19.2",
+          "question": "O colaborador sabe informar como Proceder em caso de incêndio?"
+        }
+      ]
+    },
+    {
+      "order": 20,
+      "title": "20. INFRAESTRUTURA DO SESMT",
+      "items": [
+        {
+          "order": 1,
+          "item_code": "20.1",
+          "question": "A unidade possui SESMT,conforme o dimensionamento da normativa?"
+        },
+        {
+          "order": 2,
+          "item_code": "20.2",
+          "question": "O SESMT possui sala propria atender os colaboradores?"
+        },
+        {
+          "order": 3,
+          "item_code": "20.3",
+          "question": "Existe estação de trabalho para os representantes do SESMT (mesa, cadeira, computador/notebook, impressora, outros)?"
+        },
+        {
+          "order": 4,
+          "item_code": "20.4",
+          "question": "Existem armários para a guarda dos documentos?"
+        }
+      ]
+    },
+    {
+      "order": 21,
+      "title": "OUTRAS SITUAÇÕES MAPEADAS",
+      "items": []
+    }
+  ]
+}

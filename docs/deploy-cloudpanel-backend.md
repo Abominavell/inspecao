@@ -12,7 +12,7 @@ Porta da aplicação: **8000**
 | 3 | **CloudPanel** | App Port **8000** + start `backend/start.sh` | App reinicia sem erro |
 | 4 | **CloudPanel** | SSL Let's Encrypt (só após DNS propagar) | Cadeado no navegador |
 | 5 | **Servidor** | Código, venv, `migrate`, `.env` com MySQL | `curl http://127.0.0.1:8000/health` → `{"status":"ok"}` |
-| 6 | **Servidor** | `seed_checklist` (Anexo IV) | Login + `/checklist` retorna dados |
+| 6 | **Servidor** | `migrate` (checklist embutido importa sozinho) | `/checklist` retorna dados |
 | 7 | **.env** | `ALLOWED_HOSTS=apiinspecaoiadvh.org.br` | Sem erro 400 DisallowedHost |
 
 **Erro `DNS_PROBE_FINISHED_NXDOMAIN`** = passo **1** ainda não feito (domínio não resolve na internet). O Gunicorn pode estar perfeito e o site ainda não abrir no navegador.
@@ -101,14 +101,21 @@ No CloudPanel: **Vhost → Custom Nginx Configuration**, cole o conteúdo de
 
 Alternativa rápida: no `.env`, defina `SERVE_MEDIA=true` (Django serve as fotos; menos performático).
 
-## 5. Checklist (primeira vez)
+## 5. Checklist (automático)
 
-Copie o Excel do Anexo IV para o servidor e importe:
+O checklist do **Anexo IV** (21 seções, 113 itens) está embutido em  
+`backend/inspections/data/checklist_anexo_iv.json` e é importado automaticamente no primeiro `migrate`.
+
+Para reimportar manualmente:
 
 ```bash
-cd /home/apiinspecaoiadvh/htdocs/apiinspecaoiadvh.org.br/backend
-source .venv/bin/activate
-python manage.py seed_checklist "/caminho/Anexo IV - Check List.xlsx"
+python manage.py seed_checklist
+```
+
+Para atualizar a partir de um Excel novo:
+
+```bash
+python manage.py seed_checklist "/caminho/Anexo IV.xlsx" --replace --activate
 ```
 
 ## 6. Verificar
