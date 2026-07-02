@@ -51,7 +51,7 @@ export function useAutoSave(
       } catch (err) {
         setStatus("error");
         const msg = isNetworkError(err)
-          ? "Sem conexão — alteração enfileirada"
+          ? "Salvo localmente — sincronize quando houver internet"
           : err instanceof Error
             ? err.message
             : "Erro ao salvar";

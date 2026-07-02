@@ -76,19 +76,7 @@ export function isNetworkError(err: unknown): boolean {
   return false;
 }
 
-export function enqueueOrRun(label: string, run: () => Promise<void>): Promise<void> {
-  if (typeof navigator !== "undefined" && !navigator.onLine) {
-    return new Promise((resolve, reject) => {
-      offlineQueue.enqueue(label, async () => {
-        try {
-          await run();
-          resolve();
-        } catch (e) {
-          reject(e);
-          throw e;
-        }
-      });
-    });
-  }
+export function enqueueOrRun(_label: string, run: () => Promise<void>): Promise<void> {
+  // Sempre persiste localmente (IndexedDB). A fila in-memory não sobrevive ao fechar o app.
   return run();
 }

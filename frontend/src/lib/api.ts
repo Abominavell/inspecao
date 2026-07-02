@@ -25,6 +25,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
   if (res.status === 401) {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      throw new Error("Sessão expirada — faça login quando houver internet");
+    }
     clearToken();
     if (typeof window !== "undefined") window.location.href = "/login";
     throw new Error("Não autorizado");

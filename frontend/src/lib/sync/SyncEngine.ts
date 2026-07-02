@@ -38,7 +38,10 @@ class SyncEngine {
       return { ok: false, error: "offline" };
     }
     if (!getToken()) {
-      return { ok: false, error: "not_authenticated" };
+      const refreshed = await tryRefreshToken();
+      if (!refreshed) {
+        return { ok: false, error: "not_authenticated" };
+      }
     }
 
     this.syncing = true;
@@ -49,6 +52,18 @@ class SyncEngine {
       await this.pullDelta();
       return { ok: true };
     } catch (e) {
+      if (e instanceof Error && e.message === "Não autorizado") {
+        const refreshed = await tryRefreshToken();
+        if (refreshed) {
+          try {
+            await this.pushPending();
+            await this.pullDelta();
+            return { ok: true };
+          } catch (retryErr) {
+            return { ok: false, error: retryErr instanceof Error ? retryErr.message : "sync_failed" };
+          }
+        }
+      }
       return { ok: false, error: e instanceof Error ? e.message : "sync_failed" };
     } finally {
       this.syncing = false;

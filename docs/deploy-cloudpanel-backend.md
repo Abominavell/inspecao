@@ -91,15 +91,14 @@ nslookup apiinspecao.iadvh.org.br 8.8.8.8
 
 ---
 
-## 4. Nginx — fotos `/media/`
+## 4. Nginx — estáticos e mídia
 
-CloudPanel → **Vhost** → Custom, cole `deploy/cloudpanel/nginx-media.conf`:
+CloudPanel → **Vhost** → Custom, cole o conteúdo de:
 
-```
-alias /home/iadvh-apiinspecao/htdocs/apiinspecao.iadvh.org.br/backend/uploads/;
-```
+- `deploy/cloudpanel/nginx-static.conf` — CSS/JS do Django admin (`/static/`)
+- `deploy/cloudpanel/nginx-media.conf` — fotos de inspeção (`/media/`)
 
-Ou use `SERVE_MEDIA=true` no `.env`.
+Ou use `SERVE_MEDIA=true` no `.env` para servir `/media/` via Django (menos eficiente).
 
 ---
 

@@ -5,7 +5,7 @@ import AuthImage from "@/components/AuthImage";
 import { useToast } from "@/components/ToastProvider";
 import { compressImage } from "@/lib/imageCompress";
 import { api, Photo } from "@/lib/api";
-import { saveLocalPhoto } from "@/lib/db/repositories/photoRepo";
+import { saveLocalPhoto, getLocalPhotos, deleteLocalPhoto } from "@/lib/db/repositories/photoRepo";
 import { syncEngine } from "@/lib/sync/SyncEngine";
 
 type Props = {
@@ -17,6 +17,7 @@ type Props = {
   localPreviewUrls?: Record<number, string>;
   onPhotosChange: (photos: Photo[], answerId?: number) => void;
   onLocalPhotoAdded?: (checklistItemId: number, previewUrl: string) => void;
+  onLocalPhotoRemoved?: (checklistItemId: number) => void;
   disabled?: boolean;
 };
 
@@ -29,6 +30,7 @@ export default function NcPhotoCapture({
   localPreviewUrls = {},
   onPhotosChange,
   onLocalPhotoAdded,
+  onLocalPhotoRemoved,
   disabled,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +86,15 @@ export default function NcPhotoCapture({
 
   async function handleDelete(photoId: number) {
     if (disabled) return;
+    if (inspectionClientId && localPreview) {
+      const localPhotos = await getLocalPhotos(inspectionClientId, checklistItemId);
+      for (const p of localPhotos) {
+        await deleteLocalPhoto(p.client_photo_id);
+      }
+      onLocalPhotoRemoved?.(checklistItemId);
+      toast("Foto removida", "info");
+      return;
+    }
     await api.deletePhoto(inspectionId, photoId);
     onPhotosChange(
       photos.filter((p) => p.id !== photoId),
@@ -103,11 +114,23 @@ export default function NcPhotoCapture({
       {(photos.length > 0 || localPreview) && (
         <div className="mb-3 flex flex-wrap gap-3">
           {localPreview && (
-            <img
-              src={localPreview}
-              alt="Foto NC local"
-              className="h-28 w-28 rounded-lg border-2 border-white object-cover shadow sm:h-32 sm:w-32"
-            />
+            <div className="relative">
+              <img
+                src={localPreview}
+                alt="Foto NC local"
+                className="h-28 w-28 rounded-lg border-2 border-white object-cover shadow sm:h-32 sm:w-32"
+              />
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={() => handleDelete(0)}
+                  className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-lg text-white shadow"
+                  aria-label="Remover foto"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           )}
           {photos.map((photo) => (
             <div key={photo.id} className="relative">

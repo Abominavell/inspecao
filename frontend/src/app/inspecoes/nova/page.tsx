@@ -9,7 +9,7 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import { useToast } from "@/components/ToastProvider";
 import { api, Unit } from "@/lib/api";
-import { createLocalInspection } from "@/lib/db/repositories/inspectionRepo";
+import { createLocalInspection, saveLocalUnitData } from "@/lib/db/repositories/inspectionRepo";
 import { getCachedReference, cacheReferenceData } from "@/lib/db/repositories/inspectionRepo";
 import { syncEngine } from "@/lib/sync/SyncEngine";
 import { emptyUnitInput, unitToInput } from "@/lib/unitForm";
@@ -62,6 +62,7 @@ export default function NovaInspecaoPage() {
         inspection_date: inspectionDate,
         report_date: reportDate,
       });
+      await saveLocalUnitData(local.client_id, Number(unitId), unit);
       if (navigator.onLine) {
         try {
           await api.updateUnit(Number(unitId), unit);

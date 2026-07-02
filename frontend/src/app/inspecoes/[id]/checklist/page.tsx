@@ -397,6 +397,13 @@ export default function ChecklistPage() {
                           onLocalPhotoAdded={(itemId, url) =>
                             setLocalPreviewUrls((prev) => ({ ...prev, [itemId]: url }))
                           }
+                          onLocalPhotoRemoved={(itemId) =>
+                            setLocalPreviewUrls((prev) => {
+                              const next = { ...prev };
+                              delete next[itemId];
+                              return next;
+                            })
+                          }
                           onPhotosChange={(photos, answerId) => updatePhotos(item.id, photos, answerId)}
                         />
                       </div>
