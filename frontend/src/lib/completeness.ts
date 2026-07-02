@@ -1,3 +1,4 @@
+import { splitChecklistPending } from "@/lib/pendingItems";
 import type { ChecklistSection, Completeness } from "@/lib/api";
 import type { LocalInspection, LocalAnswer, LocalPhoto } from "@/lib/db";
 import { getLocalAnswers } from "@/lib/db/repositories/answerRepo";
@@ -245,6 +246,8 @@ export async function computeLocalCompleteness(
   const readyForReport =
     unitComplete && addressPhotoComplete && coverComplete && textsComplete && checklistComplete;
 
+  const { checklist: checklistPending } = splitChecklistPending(pending);
+
   return {
     unit_complete: unitComplete,
     address_photo_complete: addressPhotoComplete,
@@ -257,6 +260,8 @@ export async function computeLocalCompleteness(
     ready_for_report: readyForReport,
     pending_items: pending.slice(0, 50),
     pending_count: pending.length,
+    checklist_pending_items: checklistPending.slice(0, 50),
+    checklist_pending_count: checklistPending.length,
     errors,
   };
 }

@@ -237,4 +237,6 @@ class CompletenessSerializer(serializers.Serializer):
     ready_for_report = serializers.BooleanField()
     pending_items = serializers.ListField(child=serializers.CharField(), default=list)
     pending_count = serializers.IntegerField()
+    checklist_pending_items = serializers.ListField(child=serializers.CharField(), default=list)
+    checklist_pending_count = serializers.IntegerField(default=0)
     errors = serializers.ListField(child=serializers.CharField(), required=False, default=list)

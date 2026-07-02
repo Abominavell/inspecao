@@ -31,6 +31,14 @@ def _is_checklist_item_complete(answer: InspectionAnswer | None) -> bool:
     return True
 
 
+def _is_checklist_pending(item: str) -> bool:
+    return (
+        item.startswith("Responder item")
+        or "item NC" in item
+        or item.startswith("Checklist:")
+    )
+
+
 def get_pending_items(inspection: Inspection) -> list[str]:
     pending: list[str] = []
     answers_by_item = _answers_by_item(inspection)
@@ -200,6 +208,7 @@ def inspection_progress(inspection: Inspection) -> dict:
 
     checklist_complete = answered == total_items and total_items > 0
     pending_items = get_pending_items(inspection)
+    checklist_pending = [p for p in pending_items if _is_checklist_pending(p)]
     ready_for_report = (
         unit_complete
         and address_photo_complete
@@ -220,4 +229,6 @@ def inspection_progress(inspection: Inspection) -> dict:
         "ready_for_report": ready_for_report,
         "pending_items": pending_items[:50],
         "pending_count": len(pending_items),
+        "checklist_pending_items": checklist_pending[:50],
+        "checklist_pending_count": len(checklist_pending),
     }

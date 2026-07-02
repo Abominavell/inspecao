@@ -87,6 +87,7 @@ export default function ChecklistPage() {
     const localPhotos = await getLocalPhotos(clientId);
     const previews: Record<number, LocalPhotoPreview[]> = {};
     for (const p of localPhotos) {
+      if (p.photo_type === "nc" && p.sync_status === "synced" && p.server_photo_id) continue;
       if (p.checklist_item_id && p.photo_type === "nc") {
         const itemId = p.checklist_item_id;
         if (!previews[itemId]) previews[itemId] = [];

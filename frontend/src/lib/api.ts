@@ -103,7 +103,11 @@ export const api = {
     request<UserAccount[] | Paginated<UserAccount>>("/auth/users").then(unwrapList),
   createUser: (data: UserCreateInput) =>
     request<UserAccount>("/auth/users", { method: "POST", body: JSON.stringify(data) }),
-  deleteUser: (id: number) => request<void>(`/auth/users/${id}`, { method: "DELETE" }),
+  setUserActive: (id: number, is_active: boolean) =>
+    request<UserAccount>(`/auth/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ is_active }),
+    }),
 
   getUnits: () => request<Unit[] | Paginated<Unit>>("/units").then(unwrapList),
   createUnit: (data: UnitInput) =>
@@ -359,6 +363,8 @@ export type Completeness = {
   ready_for_report: boolean;
   pending_items: string[];
   pending_count: number;
+  checklist_pending_items?: string[];
+  checklist_pending_count?: number;
   errors: string[];
 };
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { Completeness } from "@/lib/api";
+import { isChecklistPending } from "@/lib/pendingItems";
 
 type Props = {
   completeness: Completeness | null;
@@ -8,31 +9,27 @@ type Props = {
   scope?: "all" | "checklist";
 };
 
-function isChecklistPending(item: string): boolean {
-  return (
-    item.startsWith("Responder item") ||
-    item.includes("item NC") ||
-    item.startsWith("Checklist:")
-  );
-}
-
 export default function PendingItemsPanel({ completeness, scope = "all" }: Props) {
   if (!completeness || completeness.ready_for_report) return null;
 
-  const allItems = completeness.pending_items ?? [];
-  const items =
-    scope === "checklist" ? allItems.filter(isChecklistPending) : allItems;
+  const isChecklistScope = scope === "checklist";
+  const totalCount = isChecklistScope
+    ? (completeness.checklist_pending_count ??
+      completeness.pending_items?.filter(isChecklistPending).length ??
+      0)
+    : completeness.pending_count;
 
-  if (items.length === 0 && scope === "checklist" && completeness.checklist_complete) {
+  const items = isChecklistScope
+    ? (completeness.checklist_pending_items ??
+      completeness.pending_items?.filter(isChecklistPending) ??
+      [])
+    : (completeness.pending_items ?? []);
+
+  if (items.length === 0 && isChecklistScope && completeness.checklist_complete) {
     return null;
   }
 
-  if (items.length === 0 && scope === "all") return null;
-
-  const pendingCount =
-    scope === "checklist"
-      ? items.length
-      : completeness.pending_count;
+  if (items.length === 0 && !isChecklistScope) return null;
 
   const pct =
     completeness.checklist_total > 0
@@ -43,7 +40,7 @@ export default function PendingItemsPanel({ completeness, scope = "all" }: Props
     <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/80 p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-semibold text-amber-900">
-          Pendências{scope === "checklist" ? " do checklist" : ""} ({pendingCount})
+          Pendências{isChecklistScope ? " do checklist" : ""} ({totalCount})
         </p>
         <p className="text-xs text-amber-800">
           Checklist: {completeness.checklist_answered}/{completeness.checklist_total} ({pct}%)
@@ -57,8 +54,8 @@ export default function PendingItemsPanel({ completeness, scope = "all" }: Props
         {items.map((item) => (
           <li key={item}>• {item}</li>
         ))}
-        {scope === "all" && completeness.pending_count > items.length && (
-          <li className="text-amber-700">… e mais {completeness.pending_count - items.length}</li>
+        {totalCount > items.length && (
+          <li className="text-amber-700">… e mais {totalCount - items.length}</li>
         )}
       </ul>
     </div>

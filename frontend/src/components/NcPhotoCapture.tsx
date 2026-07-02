@@ -81,6 +81,7 @@ export default function NcPhotoCapture({
               sync_status: "synced",
               server_photo_id: uploaded.id,
             });
+            onLocalPhotoRemoved?.(checklistItemId, localPhoto.client_photo_id);
             onPhotosChange([...photos, uploaded], uploaded.answer_id);
             toast("Foto enviada ao servidor", "success");
           } catch {

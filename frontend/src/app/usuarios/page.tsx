@@ -55,14 +55,24 @@ export default function UsuariosPage() {
     }
   }
 
-  async function handleDelete(user: UserAccount) {
-    if (!confirm(`Excluir o usuário ${user.email}?`)) return;
+  async function handleToggleActive(user: UserAccount) {
+    const deactivating = user.is_active;
+    const message = deactivating
+      ? `Desativar o usuário ${user.email}?\n\nO perfil deixa de acessar o sistema, mas as inspeções já realizadas permanecem registradas.`
+      : `Reativar o usuário ${user.email}?`;
+    if (!confirm(message)) return;
     setError("");
     try {
-      await api.deleteUser(user.id);
+      await api.setUserActive(user.id, !user.is_active);
       load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao excluir usuário");
+      setError(
+        e instanceof Error
+          ? e.message
+          : deactivating
+            ? "Erro ao desativar usuário"
+            : "Erro ao reativar usuário"
+      );
     }
   }
 
@@ -139,8 +149,13 @@ export default function UsuariosPage() {
                   {!user.is_active && " · Inativo"}
                 </p>
               </div>
-              <Button type="button" variant="danger" size="sm" onClick={() => handleDelete(user)}>
-                Excluir
+              <Button
+                type="button"
+                variant={user.is_active ? "danger" : "secondary"}
+                size="sm"
+                onClick={() => handleToggleActive(user)}
+              >
+                {user.is_active ? "Desativar" : "Reativar"}
               </Button>
             </div>
           ))}

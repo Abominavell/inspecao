@@ -14,6 +14,7 @@ from .serializers import (
     LoginSerializer,
     UserCreateSerializer,
     UserSerializer,
+    UserStatusSerializer,
 )
 
 User = get_user_model()
@@ -66,6 +67,8 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == "create":
             return UserCreateSerializer
+        if self.action in ("partial_update", "update"):
+            return UserStatusSerializer
         return UserSerializer
 
     def create(self, request, *args, **kwargs):
@@ -74,8 +77,18 @@ class UserViewSet(viewsets.ModelViewSet):
         user = serializer.save()
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
-    def destroy(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
+        raise ValidationError("Use PATCH para ativar ou desativar o usuário.")
+
+    def partial_update(self, request, *args, **kwargs):
         user = self.get_object()
-        if user.pk == request.user.pk:
-            raise ValidationError("Você não pode excluir seu próprio usuário")
-        return super().destroy(request, *args, **kwargs)
+        if user.pk == request.user.pk and request.data.get("is_active") is False:
+            raise ValidationError("Você não pode desativar seu próprio usuário")
+        super().partial_update(request, *args, **kwargs)
+        user.refresh_from_db()
+        return Response(UserSerializer(user).data)
+
+    def destroy(self, request, *args, **kwargs):
+        raise ValidationError(
+            "Exclusão não permitida. Desative o usuário para preservar as inspeções vinculadas."
+        )
