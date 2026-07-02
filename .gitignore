@@ -18,6 +18,7 @@ backend/.env
 # Build
 frontend/.next/
 frontend/out/
+backend/staticfiles/
 dist/
 
 # IDE

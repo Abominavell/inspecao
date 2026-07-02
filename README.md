@@ -75,7 +75,8 @@ docker compose up --build
 
 ## Deploy em produção
 
-Guia completo: [docs/deploy.md](docs/deploy.md) — VPS com Docker + Nginx na porta 80.
+- **CloudPanel (API):** [docs/deploy-cloudpanel-backend.md](docs/deploy-cloudpanel-backend.md) — `apiinspecaoiadvh.org.br`, porta **8000**
+- **VPS + Docker:** [docs/deploy.md](docs/deploy.md) — Nginx na porta 80
 
 ## Pontuação
 
