@@ -75,8 +75,8 @@ docker compose up --build
 
 ## Deploy em produção
 
-- **CloudPanel (API):** [docs/deploy-cloudpanel-backend.md](docs/deploy-cloudpanel-backend.md) — `apiinspecaoiadvh.org.br`, porta **8000**
-- **CloudPanel (frontend):** [docs/deploy-cloudpanel-frontend.md](docs/deploy-cloudpanel-frontend.md) — Node.js, porta **3000**
+- **CloudPanel (API):** [docs/deploy-cloudpanel-backend.md](docs/deploy-cloudpanel-backend.md) — `apiinspecao.iadvh.org.br`, porta **8011**
+- **CloudPanel (frontend):** [docs/deploy-cloudpanel-frontend.md](docs/deploy-cloudpanel-frontend.md) — `inspecao.iadvh.org.br`, Node.js porta **3000**
 - **VPS + Docker:** [docs/deploy.md](docs/deploy.md) — Nginx na porta 80
 
 ## Pontuação

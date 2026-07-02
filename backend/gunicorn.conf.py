@@ -1,8 +1,9 @@
-"""Configuração Gunicorn para CloudPanel (apiinspecaoiadvh.org.br)."""
+"""Configuração Gunicorn para CloudPanel (apiinspecao.iadvh.org.br)."""
+import os
 from pathlib import Path
 
 chdir = str(Path(__file__).resolve().parent)
-bind = "127.0.0.1:8000"
+bind = os.getenv("GUNICORN_BIND", "127.0.0.1:8011")
 workers = 2
 threads = 2
 timeout = 120
