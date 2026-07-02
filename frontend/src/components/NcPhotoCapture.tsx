@@ -16,6 +16,7 @@ export type LocalPhotoPreview = {
 type Props = {
   inspectionId: number;
   inspectionClientId?: string;
+  serverId?: number;
   checklistItemId: number;
   answerId?: number;
   photos: Photo[];
@@ -29,6 +30,7 @@ type Props = {
 export default function NcPhotoCapture({
   inspectionId,
   inspectionClientId,
+  serverId,
   checklistItemId,
   answerId,
   photos,
@@ -66,8 +68,29 @@ export default function NcPhotoCapture({
           clientPhotoId: localPhoto.client_photo_id,
           url: previewUrl,
         });
-        if (navigator.onLine) void syncEngine.syncNow();
-        toast("Foto salva localmente", "success");
+
+        if (navigator.onLine && serverId) {
+          try {
+            const uploadFile = new File([compressed], file.name, { type: compressed.type || "image/jpeg" });
+            const uploaded = await api.uploadPhoto(serverId, uploadFile, {
+              answerId,
+              checklistItemId,
+            });
+            const { db } = await import("@/lib/db");
+            await db.photos.update(localPhoto.client_photo_id, {
+              sync_status: "synced",
+              server_photo_id: uploaded.id,
+            });
+            onPhotosChange([...photos, uploaded], uploaded.answer_id);
+            toast("Foto enviada ao servidor", "success");
+          } catch {
+            void syncEngine.syncNow();
+            toast("Foto salva localmente — sincronizando…", "success");
+          }
+        } else {
+          if (navigator.onLine) void syncEngine.syncNow();
+          toast("Foto salva localmente", "success");
+        }
         setLastFile(null);
         return;
       }

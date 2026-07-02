@@ -422,6 +422,7 @@ export default function ChecklistPage() {
                         <NcPhotoCapture
                           inspectionId={serverId}
                           inspectionClientId={clientId}
+                          serverId={local?.server_id}
                           checklistItemId={item.id}
                           answerId={a.answerId}
                           photos={a.photos}

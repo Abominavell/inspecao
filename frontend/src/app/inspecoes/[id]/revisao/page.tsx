@@ -21,6 +21,7 @@ import { api, AuditLogEntry, InspectionCoverInput, Scores, SsmaConfig } from "@/
 import type { LocalInspection } from "@/lib/db";
 import { getCachedReference, saveLocalReport } from "@/lib/db/repositories/inspectionRepo";
 import { syncEngine } from "@/lib/sync/SyncEngine";
+import { syncInspectionForReport } from "@/lib/sync/syncInspectionForReport";
 
 const emptyCover = (): InspectionCoverInput => ({
   cover_diretor_executivo: "",
@@ -183,6 +184,11 @@ export default function RevisaoPage() {
         await saveNow();
         await api.updateInspection(local.server_id, { ...texts, ...cover });
         await refresh();
+      }
+      const syncResult = await syncInspectionForReport(clientId, local.server_id);
+      if (!syncResult.ok) {
+        setError(syncResult.error ?? "Falha ao sincronizar dados antes do PDF.");
+        return;
       }
       const comp = await api.getCompleteness(local.server_id);
       if (!comp.ready_for_report) {

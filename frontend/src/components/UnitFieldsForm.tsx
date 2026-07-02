@@ -9,6 +9,7 @@ type Props = {
   disabled?: boolean;
   inspectionId?: number;
   inspectionClientId?: string;
+  serverId?: number;
   hasAddressPhoto?: boolean;
   onAddressPhotoChange?: (hasPhoto: boolean) => void;
 };
@@ -31,6 +32,7 @@ export default function UnitFieldsForm({
   disabled,
   inspectionId,
   inspectionClientId,
+  serverId,
   hasAddressPhoto = false,
   onAddressPhotoChange,
 }: Props) {
@@ -59,6 +61,7 @@ export default function UnitFieldsForm({
           <AddressPhotoCapture
             inspectionId={inspectionId ?? 0}
             inspectionClientId={inspectionClientId}
+            serverId={serverId}
             hasPhoto={hasAddressPhoto}
             onPhotoChange={onAddressPhotoChange}
             disabled={disabled}

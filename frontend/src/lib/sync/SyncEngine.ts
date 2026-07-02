@@ -71,27 +71,41 @@ class SyncEngine {
     }
   }
 
+  private async enrichPayload(mut: { type: string; payload: Record<string, unknown> }) {
+    const payload = { ...mut.payload };
+
+    if (mut.type === "photo.upload") {
+      const photo = await db.photos.get(String(mut.payload.client_photo_id));
+      if (photo) {
+        const buffer = await photo.blob.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        payload.file_base64 = btoa(binary);
+      }
+    }
+
+    const clientId = String(
+      payload.client_id ?? payload.inspection_client_id ?? ""
+    );
+    if (clientId && !payload.server_id) {
+      const local = await getLocalInspection(clientId);
+      if (local?.server_id) payload.server_id = local.server_id;
+    }
+
+    return payload;
+  }
+
   private async pushPending(): Promise<void> {
     const pending = await getPendingMutations(30);
     if (pending.length === 0) return;
 
     const mutations = [];
     for (const mut of pending) {
-      const payload = { ...mut.payload };
-      if (mut.type === "photo.upload") {
-        const photo = await db.photos.get(String(mut.payload.client_photo_id));
-        if (photo) {
-          const buffer = await photo.blob.arrayBuffer();
-          const bytes = new Uint8Array(buffer);
-          let binary = "";
-          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-          payload.file_base64 = btoa(binary);
-        }
-      }
       mutations.push({
         mutation_id: mut.mutation_id,
         type: mut.type,
-        payload,
+        payload: await this.enrichPayload(mut),
       });
     }
 

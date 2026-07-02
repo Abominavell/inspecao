@@ -11,6 +11,7 @@ import { syncEngine } from "@/lib/sync/SyncEngine";
 type Props = {
   inspectionId: number;
   inspectionClientId?: string;
+  serverId?: number;
   hasPhoto: boolean;
   onPhotoChange: (hasPhoto: boolean) => void;
   disabled?: boolean;
@@ -19,6 +20,7 @@ type Props = {
 export default function AddressPhotoCapture({
   inspectionId,
   inspectionClientId,
+  serverId,
   hasPhoto,
   onPhotoChange,
   disabled,
@@ -77,8 +79,23 @@ export default function AddressPhotoCapture({
         });
         setPreview(URL.createObjectURL(compressed));
         onPhotoChange(true);
-        if (navigator.onLine) void syncEngine.syncNow();
-        toast("Foto salva localmente", "success");
+        if (navigator.onLine && serverId) {
+          try {
+            const uploadFile = new File([compressed], file.name, {
+              type: compressed.type || "image/jpeg",
+            });
+            await api.uploadAddressPhoto(serverId, uploadFile);
+            toast("Foto do local enviada ao servidor", "success");
+          } catch {
+            void syncEngine.syncNow();
+            toast("Foto salva localmente — sincronizando…", "success");
+          }
+        } else if (navigator.onLine) {
+          void syncEngine.syncNow();
+          toast("Foto salva localmente", "success");
+        } else {
+          toast("Foto salva localmente", "success");
+        }
         setLastFile(null);
         return;
       }

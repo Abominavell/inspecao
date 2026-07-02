@@ -187,8 +187,9 @@ export default function DadosPage() {
                 unit={unit}
                 onChange={handleUnitChange}
                 disabled={readOnly || saveStatus === "saving"}
-                inspectionId={serverId}
+                inspectionId={local?.server_id ?? serverId}
                 inspectionClientId={clientId}
+                serverId={local?.server_id}
                 hasAddressPhoto={hasAddressPhoto}
                 onAddressPhotoChange={setHasAddressPhoto}
               />

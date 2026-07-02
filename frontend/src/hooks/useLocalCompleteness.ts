@@ -19,13 +19,8 @@ type Options = {
 };
 
 function pickCompleteness(local: Completeness, server: Completeness | null): Completeness {
-  if (!server) return local;
-  if (server.ready_for_report) return server;
-  if (local.ready_for_report) return local;
-  if (server.unit_complete && server.checklist_complete && !local.unit_complete) return server;
-  if (server.checklist_answered > local.checklist_answered) return server;
-  if (local.checklist_answered > server.checklist_answered) return local;
-  if (server.pending_count < local.pending_count) return server;
+  // Com server_id online, o servidor é a fonte da verdade (igual ao bloqueio do PDF).
+  if (server) return server;
   return local;
 }
 
