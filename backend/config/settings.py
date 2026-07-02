@@ -60,6 +60,16 @@ def _database_from_url(url: str) -> dict:
             "HOST": parsed.hostname or "",
             "PORT": str(parsed.port or 5432),
         }
+    if parsed.scheme in ("mysql", "mariadb"):
+        return {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": parsed.path.lstrip("/"),
+            "USER": parsed.username or "",
+            "PASSWORD": parsed.password or "",
+            "HOST": parsed.hostname or "127.0.0.1",
+            "PORT": str(parsed.port or 3306),
+            "OPTIONS": {"charset": "utf8mb4"},
+        }
     raise ValueError(f"DATABASE_URL não suportada: {parsed.scheme}")
 
 
