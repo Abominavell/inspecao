@@ -14,11 +14,13 @@ Caminho: `/home/iadvh-inspecao/htdocs/inspecao.iadvh.org.br`
 | **App Port** | **3011** |
 | Site User | `iadvh-inspecao` |
 
-**Start command:**
+**Start command** (delega ao PM2 — não inicia processo duplicado):
 
 ```
 /home/iadvh-inspecao/htdocs/inspecao.iadvh.org.br/frontend/start.sh
 ```
+
+> O processo real roda no PM2 (`inspecao-front`). Use `deploy-frontend.sh` ou `pm2-reload.sh` para atualizar.
 
 ## 2. SSH — deploy
 
@@ -32,10 +34,12 @@ cd frontend
 cat > .env.production << 'EOF'
 NEXT_PUBLIC_API_URL=https://apiinspecao.iadvh.org.br
 PORT=3011
+HOSTNAME=127.0.0.1
 EOF
 
 bash setup-cloudpanel.sh
 chmod +x start.sh
+bash ../repo/deploy/cloudpanel/pm2-start.sh
 ```
 
 ## 3. CORS na API
@@ -46,7 +50,9 @@ Backend `.env`:
 CORS_ORIGINS=https://inspecao.iadvh.org.br,https://www.inspecao.iadvh.org.br
 ```
 
-Reinicie a API (`apiinspecao.iadvh.org.br`, porta 8011).
+```bash
+bash deploy/cloudpanel/pm2-reload.sh api
+```
 
 ## 4. DNS
 
@@ -58,4 +64,19 @@ Reinicie a API (`apiinspecao.iadvh.org.br`, porta 8011).
 
 ```bash
 curl -I http://127.0.0.1:3011
+curl -I https://inspecao.iadvh.org.br
+```
+
+## 6. PM2
+
+```bash
+bash deploy/cloudpanel/pm2-start.sh       # primeira vez
+bash deploy/cloudpanel/pm2-reload.sh front   # após build
+bash deploy/cloudpanel/deploy-frontend.sh    # git pull + build + reload
+```
+
+```bash
+pm2 list
+pm2 logs inspecao-front
+pm2 restart inspecao-front
 ```

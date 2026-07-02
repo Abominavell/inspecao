@@ -8,7 +8,6 @@ BACKEND="$SITE_ROOT/backend"
 
 echo "==> Git pull"
 cd "$REPO"
-git checkout -- backend/start.sh 2>/dev/null || true
 git pull origin main
 
 echo "==> Dependências"
@@ -24,5 +23,8 @@ echo "==> Verificar"
 chmod +x start.sh scripts/verify-deploy.sh 2>/dev/null || chmod +x start.sh
 bash scripts/verify-deploy.sh 2>/dev/null || curl -sf http://127.0.0.1:8011/health
 
+echo "==> PM2 reload"
+bash "$REPO/deploy/cloudpanel/pm2-reload.sh" api
+
 echo ""
-echo "Reinicie o app no CloudPanel (App Port 8011)."
+echo "Deploy concluído (PM2: api-inspecao)."

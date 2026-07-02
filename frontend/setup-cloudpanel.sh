@@ -34,6 +34,7 @@ fi
 
 chmod +x start.sh
 echo ""
-echo "Setup OK. No CloudPanel:"
-echo "  App Port: ${PORT:-3011}"
-echo "  Start: $(pwd)/start.sh"
+echo "Setup OK."
+echo "PM2 (produção): bash $(pwd)/../repo/deploy/cloudpanel/pm2-start.sh"
+echo "CloudPanel — App Port: ${PORT:-3011}"
+echo "CloudPanel — Start: $(pwd)/start.sh  (delega ao PM2)"

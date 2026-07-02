@@ -37,9 +37,9 @@ python manage.py collectstatic --noinput
 
 echo ""
 echo "Setup concluído."
-echo "No CloudPanel:"
-echo "  - App Port: 8011"
-echo "  - Start command: $(pwd)/start.sh"
+echo "PM2 (produção): bash $(dirname "$0")/../repo/deploy/cloudpanel/pm2-start.sh"
+echo "CloudPanel — App Port: 8011"
+echo "CloudPanel — Start command: $(pwd)/start.sh  (delega ao PM2)"
 echo ""
 echo "Teste local: source .venv/bin/activate && gunicorn -c gunicorn.conf.py"
 echo "Health: curl http://127.0.0.1:8011/health"
