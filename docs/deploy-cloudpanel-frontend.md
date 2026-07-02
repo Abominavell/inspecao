@@ -2,74 +2,60 @@
 
 Interface: **https://inspecao.iadvh.org.br**  
 API: **https://apiinspecao.iadvh.org.br**  
-Porta Node: **3000**
+Porta Node: **3011**  
+Caminho: `/home/iadvh-inspecao/htdocs/inspecao.iadvh.org.br`
 
-## 1. Criar site no CloudPanel
+## 1. CloudPanel — Node.js Site
 
 | Campo | Valor |
 |-------|--------|
-| Tipo | **Node.js Site** |
 | Domain | `inspecao.iadvh.org.br` |
 | Node.js | 22 LTS |
-| App Port | `3000` |
-| Site User | `inspecaoiadvh` (ou nome sugerido pelo painel) |
+| **App Port** | **3011** |
+| Site User | `iadvh-inspecao` |
 
-## 2. Código no servidor
+**Start command:**
+
+```
+/home/iadvh-inspecao/htdocs/inspecao.iadvh.org.br/frontend/start.sh
+```
+
+## 2. SSH — deploy
 
 ```bash
-SITE_ROOT="/home/inspecaoiadvh/htdocs/inspecao.iadvh.org.br"
-
+SITE_ROOT="/home/iadvh-inspecao/htdocs/inspecao.iadvh.org.br"
 cd "$SITE_ROOT"
 git clone https://github.com/Abominavell/inspecao.git repo
 ln -sfn repo/frontend frontend
 cd frontend
-bash setup-cloudpanel.sh
-nano .env.production
-```
 
-`.env.production`:
-
-```env
+cat > .env.production << 'EOF'
 NEXT_PUBLIC_API_URL=https://apiinspecao.iadvh.org.br
-```
+PORT=3011
+EOF
 
-```bash
 bash setup-cloudpanel.sh
 chmod +x start.sh
 ```
 
-## 3. Start command no CloudPanel
+## 3. CORS na API
 
-```
-/home/inspecaoiadvh/htdocs/inspecao.iadvh.org.br/frontend/start.sh
-```
-
-*(Ajuste se o usuário do site for outro — veja o caminho em **File Manager**.)*
-
-## 4. CORS na API (backend)
-
-No `.env` do backend:
+Backend `.env`:
 
 ```env
 CORS_ORIGINS=https://inspecao.iadvh.org.br,https://www.inspecao.iadvh.org.br
 ```
 
-Reinicie o site Python da API.
+Reinicie a API (`apiinspecao.iadvh.org.br`, porta 8011).
 
-## 5. DNS + SSL
-
-Na zona **iadvh.org.br**:
+## 4. DNS
 
 | Tipo | Nome | Valor |
 |------|------|--------|
 | A | `inspecao` | `76.13.237.31` |
 
-Depois: CloudPanel → **SSL/TLS** → Let's Encrypt.
-
-## 6. Verificar
+## 5. Verificar
 
 ```bash
-curl -I https://inspecao.iadvh.org.br
+curl -I http://127.0.0.1:3011
 ```
-
-Login: `admin@ssma.com.br` + senha do backend.
