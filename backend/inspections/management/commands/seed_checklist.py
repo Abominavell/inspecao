@@ -76,7 +76,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("file", nargs="?", type=str, help="Caminho do arquivo .xlsx")
         parser.add_argument(
-            "--version",
+            "--checklist-version",
+            dest="checklist_version",
             type=str,
             default="",
             help="Identificador da versão (ex: 2024-03). Padrão: data atual",
@@ -99,7 +100,7 @@ class Command(BaseCommand):
             return
 
         sections = parse_checklist(xlsx_path)
-        version_slug = options["version"] or date.today().strftime("%Y-%m")
+        version_slug = options["checklist_version"] or date.today().strftime("%Y-%m")
         activate = options["activate"] or not ChecklistVersion.objects.exists()
 
         if options["replace"]:
@@ -118,7 +119,7 @@ class Command(BaseCommand):
         if not created and version.sections.exists():
             self.stdout.write(
                 self.style.WARNING(
-                    f"Versão {version_slug} já possui checklist. Use outro --version ou --replace."
+                    f"Versão {version_slug} já possui checklist. Use outro --checklist-version ou --replace."
                 )
             )
             return
