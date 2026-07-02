@@ -1,5 +1,41 @@
 import { api, Inspection, Unit, UnitInput } from "@/lib/api";
 import { db, LocalInspection, newClientId, SyncMutation } from "@/lib/db";
+import { unitToInput } from "@/lib/unitForm";
+
+function isUnitInputComplete(unit: Partial<UnitInput>): boolean {
+  const fields: (keyof UnitInput)[] = [
+    "name",
+    "regional",
+    "city",
+    "address",
+    "unit_type",
+    "admin_coordinator",
+    "general_director",
+    "characterization",
+  ];
+  return fields.every((key) => String(unit[key] ?? "").trim()) && (unit.employee_count ?? 0) > 0;
+}
+
+/** Busca unidade completa no cache local ou na API (para validação após sync). */
+export async function resolveFullUnit(unitId: number): Promise<UnitInput | null> {
+  const cached = (await getCachedReference<Unit[]>("units")) ?? [];
+  const fromCache = cached.find((u) => u.id === unitId);
+  if (fromCache && isUnitInputComplete(fromCache)) return unitToInput(fromCache);
+
+  if (typeof navigator !== "undefined" && navigator.onLine) {
+    try {
+      const units = await api.getUnits();
+      const now = new Date().toISOString();
+      await db.reference_cache.put({ key: "units", data: units, cached_at: now });
+      const fromApi = units.find((u) => u.id === unitId);
+      if (fromApi) return unitToInput(fromApi);
+    } catch {
+      /* offline */
+    }
+  }
+
+  return fromCache ? unitToInput(fromCache) : null;
+}
 
 export async function listLocalInspections(): Promise<LocalInspection[]> {
   return db.inspections.orderBy("updated_at").reverse().toArray();
@@ -102,14 +138,24 @@ export async function createLocalInspection(input: {
 export async function upsertLocalFromServer(insp: Inspection): Promise<LocalInspection> {
   const existing = await getLocalInspectionByServerId(insp.id);
   const client_id = existing?.client_id ?? newClientId();
+  const unitId = insp.unit_id ?? insp.unit?.id;
+  const existingUnit = (existing?.unit_data ?? {}) as Partial<UnitInput>;
+  let unitData: Record<string, unknown> | undefined = existing?.unit_data;
+
+  if (!isUnitInputComplete(existingUnit) && unitId) {
+    const full = await resolveFullUnit(unitId);
+    if (full) unitData = full as unknown as Record<string, unknown>;
+  }
+
   const now = new Date().toISOString();
   const record: LocalInspection = {
     client_id,
     server_id: insp.id,
-    unit_id: insp.unit_id ?? insp.unit?.id,
-    unit_name: insp.unit?.name,
-    unit_regional: insp.unit?.regional,
-    unit_city: insp.unit?.city,
+    unit_id: unitId,
+    unit_name: insp.unit?.name ?? existing?.unit_name,
+    unit_regional: insp.unit?.regional ?? existing?.unit_regional,
+    unit_city: insp.unit?.city ?? existing?.unit_city,
+    unit_data: unitData,
     inspection_date: insp.inspection_date,
     report_date: insp.report_date,
     status: insp.status,

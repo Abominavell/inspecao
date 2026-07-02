@@ -5,7 +5,7 @@ import type { ChecklistSection, Completeness } from "@/lib/api";
 import { api } from "@/lib/api";
 import type { LocalInspection } from "@/lib/db";
 import { computeLocalCompleteness, type LiveChecklistAnswer } from "@/lib/completeness";
-import { getCachedReference } from "@/lib/db/repositories/inspectionRepo";
+import { getCachedReference, getLocalInspection } from "@/lib/db/repositories/inspectionRepo";
 import {
   answersToLiveMap,
   hydrateInspectionFromServer,
@@ -21,6 +21,8 @@ type Options = {
 function pickCompleteness(local: Completeness, server: Completeness | null): Completeness {
   if (!server) return local;
   if (server.ready_for_report) return server;
+  if (local.ready_for_report) return local;
+  if (server.unit_complete && server.checklist_complete && !local.unit_complete) return server;
   if (server.checklist_answered > local.checklist_answered) return server;
   if (local.checklist_answered > server.checklist_answered) return local;
   if (server.pending_count < local.pending_count) return server;
@@ -48,7 +50,7 @@ export function useInspectionCompleteness(
     }
     let active = true;
 
-    const inspection = local;
+    let inspection = local;
     async function run() {
       let liveAnswers = options.liveAnswers;
       let serverComp: Completeness | null = null;
@@ -57,6 +59,8 @@ export function useInspectionCompleteness(
         try {
           if (!liveAnswers) {
             await hydrateInspectionFromServer(clientId, serverId);
+            const refreshed = await getLocalInspection(clientId);
+            if (refreshed) inspection = refreshed;
           }
           const sections =
             options.sections ?? (await getCachedReference<ChecklistSection[]>("checklist")) ?? [];

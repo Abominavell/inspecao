@@ -48,8 +48,15 @@ const textFields = [
 export default function RevisaoPage() {
   const rawId = useInspectionRouteId();
   const online = useOnlineStatus();
-  const { local, clientId, inspection, loading: localLoading, readOnly, canGeneratePdf, refresh } =
-    useLocalInspection(rawId);
+  const {
+    local,
+    clientId,
+    inspection,
+    loading: localLoading,
+    readOnly,
+    canGeneratePdf,
+    refresh,
+  } = useLocalInspection(rawId);
   const [ssma, setSsma] = useState<SsmaConfig | null>(null);
   const [cover, setCover] = useState<InspectionCoverInput>(emptyCover());
   const [texts, setTexts] = useState({
@@ -71,10 +78,14 @@ export default function RevisaoPage() {
   const load = useCallback(() => {
     setReady(false);
     return (async () => {
+      let current = local;
       if (local?.server_id && clientId && navigator.onLine) {
         try {
           const { hydrateInspectionFromServer } = await import("@/lib/hydrateInspectionFromServer");
+          const { getLocalInspection } = await import("@/lib/db/repositories/inspectionRepo");
           await hydrateInspectionFromServer(clientId, local.server_id);
+          current = (await getLocalInspection(clientId)) ?? local;
+          await refresh();
         } catch {
           /* ignore */
         }
@@ -93,32 +104,32 @@ export default function RevisaoPage() {
           cidade: "",
         };
       setSsma(defaults);
-      if (local) {
+      if (current) {
         setCover({
-          cover_diretor_executivo: local.cover_diretor_executivo || defaults.diretor_executivo,
-          cover_gerente_geral: local.cover_gerente_geral || defaults.gerente_geral,
-          cover_gerente_sst: local.cover_gerente_sst || defaults.gerente_sst,
+          cover_diretor_executivo: current.cover_diretor_executivo || defaults.diretor_executivo,
+          cover_gerente_geral: current.cover_gerente_geral || defaults.gerente_geral,
+          cover_gerente_sst: current.cover_gerente_sst || defaults.gerente_sst,
           cover_gerente_meio_ambiente:
-            local.cover_gerente_meio_ambiente || defaults.gerente_meio_ambiente,
+            current.cover_gerente_meio_ambiente || defaults.gerente_meio_ambiente,
         });
         setTexts({
-          general_info_text: local.general_info_text || "",
-          methodology_text: local.methodology_text || "",
-          objectives_text: local.objectives_text || "",
-          limitations_text: local.limitations_text || "",
-          final_considerations_text: local.final_considerations_text || "",
+          general_info_text: current.general_info_text || "",
+          methodology_text: current.methodology_text || "",
+          objectives_text: current.objectives_text || "",
+          limitations_text: current.limitations_text || "",
+          final_considerations_text: current.final_considerations_text || "",
         });
       }
-      if (local?.server_id && navigator.onLine) {
+      if (current?.server_id && navigator.onLine) {
         try {
           const [sc, me] = await Promise.all([
-            api.getScores(local.server_id),
+            api.getScores(current.server_id),
             api.me(),
           ]);
           setScores(sc);
           setIsStaff(me.is_staff);
           if (me.is_staff) {
-            api.getAuditLog(local.server_id).then(setAuditLog).catch(() => setAuditLog([]));
+            api.getAuditLog(current.server_id).then(setAuditLog).catch(() => setAuditLog([]));
           }
         } catch {
           /* offline */
@@ -126,7 +137,7 @@ export default function RevisaoPage() {
       }
       setReady(true);
     })();
-  }, [local, clientId]);
+  }, [local, clientId, refresh]);
 
   useEffect(() => {
     if (!localLoading) load();

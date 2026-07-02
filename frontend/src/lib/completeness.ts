@@ -80,6 +80,23 @@ function unitFromLocal(local: LocalInspection): UnitInput {
   };
 }
 
+function isUnitInputComplete(unit: UnitInput): boolean {
+  return (
+    UNIT_CHECKS.every(({ key }) => String(unit[key] ?? "").trim()) && (unit.employee_count ?? 0) > 0
+  );
+}
+
+async function resolveUnitForCompleteness(local: LocalInspection): Promise<UnitInput> {
+  const fromLocal = unitFromLocal(local);
+  if (isUnitInputComplete(fromLocal)) return fromLocal;
+  if (local.unit_id) {
+    const { resolveFullUnit } = await import("@/lib/db/repositories/inspectionRepo");
+    const full = await resolveFullUnit(local.unit_id);
+    if (full) return full;
+  }
+  return fromLocal;
+}
+
 function buildNcPhotoCounts(
   photos: LocalPhoto[],
   liveCounts?: Record<number, number>
@@ -186,7 +203,7 @@ export async function computeLocalCompleteness(
     errors.push(`Checklist: faltam ${unansweredForError} de ${totalItems} itens sem resposta`);
   }
 
-  const unit = unitFromLocal(local);
+  const unit = await resolveUnitForCompleteness(local);
   for (const { label, key } of UNIT_CHECKS) {
     if (!String(unit[key] ?? "").trim()) {
       pending.push(`Unidade: ${label}`);
