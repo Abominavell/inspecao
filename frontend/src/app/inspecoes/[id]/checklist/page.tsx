@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AutoSaveIndicator from "@/components/AutoSaveIndicator";
 import InspectionNav from "@/components/InspectionNav";
-import NcPhotoCapture from "@/components/NcPhotoCapture";
+import NcPhotoCapture, { LocalPhotoPreview } from "@/components/NcPhotoCapture";
 import PendingItemsPanel from "@/components/PendingItemsPanel";
 import ReadOnlyBanner from "@/components/ReadOnlyBanner";
 import Button from "@/components/ui/Button";
@@ -68,7 +68,7 @@ export default function ChecklistPage() {
   const [sections, setSections] = useState<ChecklistSection[]>([]);
   const [activeSection, setActiveSection] = useState(0);
   const [answers, setAnswers] = useState<Record<number, LocalAnswer>>({});
-  const [localPreviewUrls, setLocalPreviewUrls] = useState<Record<number, string>>({});
+  const [localPreviewUrls, setLocalPreviewUrls] = useState<Record<number, LocalPhotoPreview[]>>({});
   const [sectionScore, setSectionScore] = useState<SectionScore | null>(null);
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState("");
@@ -84,10 +84,15 @@ export default function ChecklistPage() {
       (await getCachedReference<ChecklistSection[]>("checklist")) ?? [];
     const localAnswers = await getLocalAnswers(clientId);
     const localPhotos = await getLocalPhotos(clientId);
-    const previews: Record<number, string> = {};
+    const previews: Record<number, LocalPhotoPreview[]> = {};
     for (const p of localPhotos) {
       if (p.checklist_item_id && p.photo_type === "nc") {
-        previews[p.checklist_item_id] = URL.createObjectURL(p.blob);
+        const itemId = p.checklist_item_id;
+        if (!previews[itemId]) previews[itemId] = [];
+        previews[itemId].push({
+          clientPhotoId: p.client_photo_id,
+          url: URL.createObjectURL(p.blob),
+        });
       }
     }
     setLocalPreviewUrls(previews);
@@ -392,16 +397,26 @@ export default function ChecklistPage() {
                           checklistItemId={item.id}
                           answerId={a.answerId}
                           photos={a.photos}
-                          localPreviewUrls={localPreviewUrls}
+                          localPreviews={localPreviewUrls[item.id] ?? []}
                           disabled={readOnly}
-                          onLocalPhotoAdded={(itemId, url) =>
-                            setLocalPreviewUrls((prev) => ({ ...prev, [itemId]: url }))
+                          onLocalPhotoAdded={(itemId, preview) =>
+                            setLocalPreviewUrls((prev) => ({
+                              ...prev,
+                              [itemId]: [...(prev[itemId] ?? []), preview],
+                            }))
                           }
-                          onLocalPhotoRemoved={(itemId) =>
+                          onLocalPhotoRemoved={(itemId, clientPhotoId) =>
                             setLocalPreviewUrls((prev) => {
-                              const next = { ...prev };
-                              delete next[itemId];
-                              return next;
+                              const removed = (prev[itemId] ?? []).find(
+                                (p) => p.clientPhotoId === clientPhotoId
+                              );
+                              if (removed) URL.revokeObjectURL(removed.url);
+                              return {
+                                ...prev,
+                                [itemId]: (prev[itemId] ?? []).filter(
+                                  (p) => p.clientPhotoId !== clientPhotoId
+                                ),
+                              };
                             })
                           }
                           onPhotosChange={(photos, answerId) => updatePhotos(item.id, photos, answerId)}

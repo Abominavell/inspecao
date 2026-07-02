@@ -5,8 +5,13 @@ import AuthImage from "@/components/AuthImage";
 import { useToast } from "@/components/ToastProvider";
 import { compressImage } from "@/lib/imageCompress";
 import { api, Photo } from "@/lib/api";
-import { saveLocalPhoto, getLocalPhotos, deleteLocalPhoto } from "@/lib/db/repositories/photoRepo";
+import { saveLocalPhoto, deleteLocalPhoto } from "@/lib/db/repositories/photoRepo";
 import { syncEngine } from "@/lib/sync/SyncEngine";
+
+export type LocalPhotoPreview = {
+  clientPhotoId: string;
+  url: string;
+};
 
 type Props = {
   inspectionId: number;
@@ -14,10 +19,10 @@ type Props = {
   checklistItemId: number;
   answerId?: number;
   photos: Photo[];
-  localPreviewUrls?: Record<number, string>;
+  localPreviews?: LocalPhotoPreview[];
   onPhotosChange: (photos: Photo[], answerId?: number) => void;
-  onLocalPhotoAdded?: (checklistItemId: number, previewUrl: string) => void;
-  onLocalPhotoRemoved?: (checklistItemId: number) => void;
+  onLocalPhotoAdded?: (checklistItemId: number, preview: LocalPhotoPreview) => void;
+  onLocalPhotoRemoved?: (checklistItemId: number, clientPhotoId: string) => void;
   disabled?: boolean;
 };
 
@@ -27,7 +32,7 @@ export default function NcPhotoCapture({
   checklistItemId,
   answerId,
   photos,
-  localPreviewUrls = {},
+  localPreviews = [],
   onPhotosChange,
   onLocalPhotoAdded,
   onLocalPhotoRemoved,
@@ -57,7 +62,10 @@ export default function NcPhotoCapture({
           photoType: "nc",
         });
         const previewUrl = URL.createObjectURL(compressed);
-        onLocalPhotoAdded?.(checklistItemId, previewUrl);
+        onLocalPhotoAdded?.(checklistItemId, {
+          clientPhotoId: localPhoto.client_photo_id,
+          url: previewUrl,
+        });
         if (navigator.onLine) void syncEngine.syncNow();
         toast("Foto salva localmente", "success");
         setLastFile(null);
@@ -84,17 +92,15 @@ export default function NcPhotoCapture({
     }
   }
 
-  async function handleDelete(photoId: number) {
+  async function handleDeleteLocal(clientPhotoId: string) {
     if (disabled) return;
-    if (inspectionClientId && localPreview) {
-      const localPhotos = await getLocalPhotos(inspectionClientId, checklistItemId);
-      for (const p of localPhotos) {
-        await deleteLocalPhoto(p.client_photo_id);
-      }
-      onLocalPhotoRemoved?.(checklistItemId);
-      toast("Foto removida", "info");
-      return;
-    }
+    await deleteLocalPhoto(clientPhotoId);
+    onLocalPhotoRemoved?.(checklistItemId, clientPhotoId);
+    toast("Foto removida", "info");
+  }
+
+  async function handleDeleteServer(photoId: number) {
+    if (disabled) return;
     await api.deletePhoto(inspectionId, photoId);
     onPhotosChange(
       photos.filter((p) => p.id !== photoId),
@@ -103,7 +109,7 @@ export default function NcPhotoCapture({
     toast("Foto removida", "info");
   }
 
-  const localPreview = localPreviewUrls[checklistItemId];
+  const hasPhotos = photos.length > 0 || localPreviews.length > 0;
 
   return (
     <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:col-span-2">
@@ -111,19 +117,19 @@ export default function NcPhotoCapture({
         Registro fotográfico da NC <span className="text-red-600">*</span>
       </p>
 
-      {(photos.length > 0 || localPreview) && (
+      {hasPhotos && (
         <div className="mb-3 flex flex-wrap gap-3">
-          {localPreview && (
-            <div className="relative">
+          {localPreviews.map((preview) => (
+            <div key={preview.clientPhotoId} className="relative">
               <img
-                src={localPreview}
+                src={preview.url}
                 alt="Foto NC local"
                 className="h-28 w-28 rounded-lg border-2 border-white object-cover shadow sm:h-32 sm:w-32"
               />
               {!disabled && (
                 <button
                   type="button"
-                  onClick={() => handleDelete(0)}
+                  onClick={() => handleDeleteLocal(preview.clientPhotoId)}
                   className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-lg text-white shadow"
                   aria-label="Remover foto"
                 >
@@ -131,7 +137,7 @@ export default function NcPhotoCapture({
                 </button>
               )}
             </div>
-          )}
+          ))}
           {photos.map((photo) => (
             <div key={photo.id} className="relative">
               <AuthImage
@@ -143,7 +149,7 @@ export default function NcPhotoCapture({
               {!disabled && (
                 <button
                   type="button"
-                  onClick={() => handleDelete(photo.id)}
+                  onClick={() => handleDeleteServer(photo.id)}
                   className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-lg text-white shadow"
                   aria-label="Remover foto"
                 >
