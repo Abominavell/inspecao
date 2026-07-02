@@ -3,6 +3,53 @@
 API: **https://apiinspecaoiadvh.org.br**  
 Porta da aplicação: **8000**
 
+## Checklist completo (o que costuma faltar)
+
+| # | Onde | O que fazer | Como saber se está OK |
+|---|------|-------------|------------------------|
+| 1 | **Registrador DNS** | Registro **A** `apiinspecaoiadvh` → IP do VPS | `nslookup apiinspecaoiadvh.org.br` retorna o IP |
+| 2 | **CloudPanel** | Site Python criado com domínio `apiinspecaoiadvh.org.br` | Site aparece no painel |
+| 3 | **CloudPanel** | App Port **8000** + start `backend/start.sh` | App reinicia sem erro |
+| 4 | **CloudPanel** | SSL Let's Encrypt (só após DNS propagar) | Cadeado no navegador |
+| 5 | **Servidor** | Código, venv, `migrate`, `.env` com MySQL | `curl http://127.0.0.1:8000/health` → `{"status":"ok"}` |
+| 6 | **Servidor** | `seed_checklist` (Anexo IV) | Login + `/checklist` retorna dados |
+| 7 | **.env** | `ALLOWED_HOSTS=apiinspecaoiadvh.org.br` | Sem erro 400 DisallowedHost |
+
+**Erro `DNS_PROBE_FINISHED_NXDOMAIN`** = passo **1** ainda não feito (domínio não resolve na internet). O Gunicorn pode estar perfeito e o site ainda não abrir no navegador.
+
+---
+
+## 0. DNS (obrigatório antes do SSL)
+
+### Descobrir o IP do servidor
+
+```bash
+curl -4 ifconfig.me
+```
+
+### Criar registro no painel do domínio (`iadvh.org.br`)
+
+No Registro.br, Cloudflare ou onde o domínio está:
+
+| Tipo | Nome / Host | Valor | TTL |
+|------|-------------|-------|-----|
+| **A** | `apiinspecaoiadvh` | IP do servidor (ex. `45.x.x.x`) | 300–3600 |
+
+Isso cria `apiinspecaoiadvh.org.br` → seu VPS.
+
+**Registro.br:** DNS → zona `iadvh.org.br` → novo registro → tipo A → nome `apiinspecaoiadvh` → dados = IP.
+
+Aguarde propagação (minutos a algumas horas). Teste:
+
+```bash
+nslookup apiinspecaoiadvh.org.br
+ping apiinspecaoiadvh.org.br
+```
+
+Só depois disso: CloudPanel → site → **SSL** → Let's Encrypt.
+
+---
+
 ## 1. Site Python no CloudPanel
 
 | Campo | Valor |
@@ -17,7 +64,7 @@ Porta da aplicação: **8000**
 No SSH do servidor (ajuste o caminho do site no CloudPanel):
 
 ```bash
-cd /home/cloudpanel/htdocs/apiinspecaoiadvh.org.br
+cd /home/apiinspecaoiadvh/htdocs/apiinspecaoiadvh.org.br
 git clone https://github.com/Abominavell/inspecao.git repo
 ln -sfn repo/backend backend
 cd backend
@@ -36,13 +83,13 @@ nano .env
 Em **Site → Settings → App** (ou equivalente Python):
 
 ```
-/home/cloudpanel/htdocs/apiinspecaoiadvh.org.br/backend/start.sh
+/home/apiinspecaoiadvh/htdocs/apiinspecaoiadvh.org.br/backend/start.sh
 ```
 
 Ou manualmente:
 
 ```
-/home/cloudpanel/htdocs/apiinspecaoiadvh.org.br/backend/.venv/bin/gunicorn -c gunicorn.conf.py
+/home/apiinspecaoiadvh/htdocs/apiinspecaoiadvh.org.br/backend/.venv/bin/gunicorn -c gunicorn.conf.py
 ```
 
 **Working directory:** pasta `backend/`
@@ -59,7 +106,7 @@ Alternativa rápida: no `.env`, defina `SERVE_MEDIA=true` (Django serve as fotos
 Copie o Excel do Anexo IV para o servidor e importe:
 
 ```bash
-cd /home/cloudpanel/htdocs/apiinspecaoiadvh.org.br/backend
+cd /home/apiinspecaoiadvh/htdocs/apiinspecaoiadvh.org.br/backend
 source .venv/bin/activate
 python manage.py seed_checklist "/caminho/Anexo IV - Check List.xlsx"
 ```
@@ -79,7 +126,7 @@ curl -X POST https://apiinspecaoiadvh.org.br/auth/login/json \
 ## 7. Atualizar versão
 
 ```bash
-cd /home/cloudpanel/htdocs/apiinspecaoiadvh.org.br/repo
+cd /home/apiinspecaoiadvh/htdocs/apiinspecaoiadvh.org.br/repo
 git pull
 cd backend
 source .venv/bin/activate
