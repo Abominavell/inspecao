@@ -11,6 +11,8 @@ import SyncStatusBar from "@/components/SyncStatusBar";
 import { ToastProvider } from "@/components/ToastProvider";
 import { api, clearToken, getToken, setToken } from "@/lib/api";
 import { db } from "@/lib/db";
+import { cacheReferenceData } from "@/lib/db/repositories/inspectionRepo";
+import { warmAppShellRoutes } from "@/lib/inspectionRoutes";
 
 const baseNav = [
   { href: "/", label: "Dashboard" },
@@ -43,12 +45,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           const u = await api.me();
           setUserName(u.name);
           setIsStaff(u.is_staff);
+          if (navigator.onLine) {
+            void cacheReferenceData();
+            warmAppShellRoutes();
+          }
         } catch {
           const refreshed = await import("@/lib/sync/SyncEngine").then((m) => m.tryRefreshToken());
           if (refreshed) {
             const u = await api.me();
             setUserName(u.name);
             setIsStaff(u.is_staff);
+            if (navigator.onLine) {
+              void cacheReferenceData();
+              warmAppShellRoutes();
+            }
             return;
           }
           const session = await db.auth_session.get(1);
@@ -72,6 +82,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           api.me().then((u) => {
             setUserName(u.name);
             setIsStaff(u.is_staff);
+            void cacheReferenceData();
+            warmAppShellRoutes();
           }).catch(() => router.replace("/login"));
         }
         return;

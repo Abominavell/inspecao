@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import InspectionStepLink from "@/components/InspectionStepLink";
+import { useInspectionRouteId } from "@/hooks/useInspectionRouteId";
+import { inspectionStepHref } from "@/lib/inspectionRoutes";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AutoSaveIndicator from "@/components/AutoSaveIndicator";
 import InspectionNav from "@/components/InspectionNav";
@@ -43,8 +44,7 @@ const textFields = [
 ] as const;
 
 export default function RevisaoPage() {
-  const params = useParams();
-  const rawId = params.id as string;
+  const rawId = useInspectionRouteId();
   const online = useOnlineStatus();
   const { local, clientId, inspection, loading: localLoading, readOnly, canGeneratePdf, refresh } =
     useLocalInspection(rawId);
@@ -381,18 +381,18 @@ export default function RevisaoPage() {
         {!completeness?.ready_for_report && (
           <>
             {!completeness?.unit_complete && (
-              <Link href={`/inspecoes/${rawId}/dados`}>
+              <InspectionStepLink href={inspectionStepHref("dados", rawId)}>
                 <Button variant="secondary" size="lg">
                   Completar dados da unidade
                 </Button>
-              </Link>
+              </InspectionStepLink>
             )}
             {!completeness?.checklist_complete && (
-              <Link href={`/inspecoes/${rawId}/checklist`}>
+              <InspectionStepLink href={inspectionStepHref("checklist", rawId)}>
                 <Button variant="secondary" size="lg">
                   Completar checklist
                 </Button>
-              </Link>
+              </InspectionStepLink>
             )}
           </>
         )}

@@ -1,6 +1,7 @@
 "use client";
 
 import AppLogo from "@/components/AppLogo";
+import InspectionStepLink from "@/components/InspectionStepLink";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -12,9 +13,11 @@ import { TableSkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ToastProvider";
 import { api, Inspection, InspectionFilters, Unit } from "@/lib/api";
 import {
+  cacheReferenceData,
   listLocalInspections,
   localToInspectionDisplay,
 } from "@/lib/db/repositories/inspectionRepo";
+import { inspectionStepHref, warmAppShellRoutes } from "@/lib/inspectionRoutes";
 import type { SyncStatus } from "@/lib/db";
 
 type DashboardInspection = Inspection & {
@@ -33,6 +36,10 @@ export default function DashboardPage() {
 
   const load = useCallback(() => {
     setLoading(true);
+    if (navigator.onLine) {
+      void cacheReferenceData();
+      warmAppShellRoutes();
+    }
     Promise.all([
       navigator.onLine ? api.getInspections(filters) : Promise.resolve([] as Inspection[]),
       navigator.onLine ? api.getUnits() : import("@/lib/db/repositories/inspectionRepo").then((m) => m.getCachedReference<Unit[]>("units").then((u) => u ?? [])),
@@ -242,12 +249,12 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
-                        <Link
-                          href={`/inspecoes/${insp.routeId}/dados`}
+                        <InspectionStepLink
+                          href={inspectionStepHref("dados", insp.routeId)}
                           className="font-medium text-emserh-green hover:underline"
                         >
                           Abrir
-                        </Link>
+                        </InspectionStepLink>
                         {!insp.is_archived && insp.id > 0 && (
                           <>
                             <button
@@ -278,9 +285,12 @@ export default function DashboardPage() {
             {inspections.map((insp) => (
               <div key={insp.routeId} className="rounded-xl border border-border bg-card p-4 shadow-sm">
                 <div className="mb-2 flex items-start justify-between gap-2">
-                  <Link href={`/inspecoes/${insp.routeId}/dados`} className="font-semibold text-slate-800">
+                  <InspectionStepLink
+                    href={inspectionStepHref("dados", insp.routeId)}
+                    className="font-semibold text-slate-800"
+                  >
                     {insp.unit?.name}
-                  </Link>
+                  </InspectionStepLink>
                   <StatusBadge status={insp.is_archived ? "arquivado" : insp.status} />
                 </div>
                 <p className="text-sm text-slate-500">

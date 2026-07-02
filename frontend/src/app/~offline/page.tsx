@@ -1,4 +1,3 @@
-import Link from "next/link";
 import AppLogo from "@/components/AppLogo";
 import Button from "@/components/ui/Button";
 
@@ -11,9 +10,9 @@ export default function OfflinePage() {
         O aplicativo continua funcionando. Suas alterações são salvas localmente e serão
         sincronizadas quando a internet voltar.
       </p>
-      <Link href="/">
+      <a href="/">
         <Button>Ir para o início</Button>
-      </Link>
+      </a>
     </div>
   );
 }

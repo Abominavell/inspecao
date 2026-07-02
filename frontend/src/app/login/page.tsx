@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { api, setToken } from "@/lib/api";
 import { cacheReferenceData } from "@/lib/db/repositories/inspectionRepo";
+import { warmAppShellRoutes } from "@/lib/inspectionRoutes";
 import { saveAuthSession } from "@/lib/sync/SyncEngine";
 
 export default function LoginPage() {
@@ -26,6 +27,7 @@ export default function LoginPage() {
       const me = await api.me();
       await saveAuthSession(access_token, refresh_token ?? null, me as unknown as Record<string, unknown>);
       await cacheReferenceData();
+      warmAppShellRoutes();
       router.push("/");
     } catch {
       setError("E-mail ou senha incorretos");

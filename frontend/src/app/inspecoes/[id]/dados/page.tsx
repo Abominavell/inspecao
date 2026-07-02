@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AutoSaveIndicator from "@/components/AutoSaveIndicator";
 import InspectionNav from "@/components/InspectionNav";
@@ -13,7 +13,9 @@ import Select from "@/components/ui/Select";
 import Skeleton from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ToastProvider";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useInspectionRouteId } from "@/hooks/useInspectionRouteId";
 import { useLocalInspection } from "@/hooks/useLocalInspection";
+import { inspectionStepHref, navigateApp } from "@/lib/inspectionRoutes";
 import { api, Completeness, Unit, UnitInput } from "@/lib/api";
 import {
   cacheReferenceData,
@@ -24,9 +26,8 @@ import { syncEngine } from "@/lib/sync/SyncEngine";
 import { emptyUnitInput, unitToInput } from "@/lib/unitForm";
 
 export default function DadosPage() {
-  const params = useParams();
   const router = useRouter();
-  const rawId = params.id as string;
+  const rawId = useInspectionRouteId();
   const { local, clientId, inspection, loading: localLoading, readOnly } = useLocalInspection(rawId);
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
@@ -190,7 +191,7 @@ export default function DadosPage() {
           <Button
             type="button"
             size="lg"
-            onClick={() => router.push(`/inspecoes/${rawId}/checklist`)}
+            onClick={() => navigateApp(inspectionStepHref("checklist", rawId), router)}
           >
             Ir para checklist →
           </Button>

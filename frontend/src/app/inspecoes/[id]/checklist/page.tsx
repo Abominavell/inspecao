@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AutoSaveIndicator from "@/components/AutoSaveIndicator";
 import InspectionNav from "@/components/InspectionNav";
@@ -13,7 +13,9 @@ import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import { useToast } from "@/components/ToastProvider";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useInspectionRouteId } from "@/hooks/useInspectionRouteId";
 import { useLocalInspection } from "@/hooks/useLocalInspection";
+import { inspectionStepHref, navigateApp } from "@/lib/inspectionRoutes";
 import {
   AnswerInput,
   ChecklistSection,
@@ -61,9 +63,8 @@ function sectionProgress(sec: ChecklistSection, answers: Record<number, LocalAns
 }
 
 export default function ChecklistPage() {
-  const params = useParams();
   const router = useRouter();
-  const rawId = params.id as string;
+  const rawId = useInspectionRouteId();
   const { clientId, inspection, loading: localLoading, readOnly, local } = useLocalInspection(rawId);
   const [sections, setSections] = useState<ChecklistSection[]>([]);
   const [activeSection, setActiveSection] = useState(0);
@@ -475,7 +476,7 @@ export default function ChecklistPage() {
                 onClick={async () => {
                   try {
                     await saveNow();
-                    router.push(`/inspecoes/${rawId}/revisao`);
+                    navigateApp(inspectionStepHref("revisao", rawId), router);
                   } catch {
                     setMessage("Conclua os campos NC antes de continuar.");
                   }

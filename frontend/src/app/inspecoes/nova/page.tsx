@@ -11,6 +11,7 @@ import { useToast } from "@/components/ToastProvider";
 import { api, Unit } from "@/lib/api";
 import { createLocalInspection, saveLocalUnitData } from "@/lib/db/repositories/inspectionRepo";
 import { getCachedReference, cacheReferenceData } from "@/lib/db/repositories/inspectionRepo";
+import { inspectionStepHref, navigateApp, warmAppShellRoutes } from "@/lib/inspectionRoutes";
 import { syncEngine } from "@/lib/sync/SyncEngine";
 import { emptyUnitInput, unitToInput } from "@/lib/unitForm";
 
@@ -24,6 +25,12 @@ export default function NovaInspecaoPage() {
   const [reportDate, setReportDate] = useState(new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
   const [defaults, setDefaults] = useState<{ regional: string; cidade: string } | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    setIsOffline(!navigator.onLine);
+    if (navigator.onLine) warmAppShellRoutes();
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -73,7 +80,9 @@ export default function NovaInspecaoPage() {
       } else {
         toast("Inspeção criada offline", "success");
       }
-      router.push(`/inspecoes/${local.client_id}/dados`);
+      navigateApp(inspectionStepHref("dados", local.client_id), router);
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro ao criar inspeção", "error");
     } finally {
       setLoading(false);
     }
@@ -87,6 +96,13 @@ export default function NovaInspecaoPage() {
       </p>
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card title="Unidade">
+          {units.length === 0 && (
+            <p className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+              {isOffline
+                ? "Nenhuma unidade no cache. Conecte à internet, faça login e abra o app uma vez antes de usar offline."
+                : "Nenhuma unidade encontrada. Cadastre unidades ou atualize a página."}
+            </p>
+          )}
           <Select
             label="Unidade cadastrada *"
             value={unitId}

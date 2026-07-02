@@ -1,14 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import InspectionStepLink from "@/components/InspectionStepLink";
+import { useInspectionRouteId } from "@/hooks/useInspectionRouteId";
 import { api, Completeness } from "@/lib/api";
+import { isClientInspectionId, inspectionStepHref } from "@/lib/inspectionRoutes";
 
 const steps = [
-  { suffix: "dados", label: "Dados", key: "unit" as const },
-  { suffix: "checklist", label: "Checklist", key: "checklist" as const },
-  { suffix: "revisao", label: "Relatório", key: "report" as const },
+  { suffix: "dados" as const, label: "Dados", key: "unit" as const },
+  { suffix: "checklist" as const, label: "Checklist", key: "checklist" as const },
+  { suffix: "revisao" as const, label: "Relatório", key: "report" as const },
 ];
 
 function stepDone(step: (typeof steps)[number], comp: Completeness | null): boolean {
@@ -19,13 +21,12 @@ function stepDone(step: (typeof steps)[number], comp: Completeness | null): bool
 }
 
 export default function InspectionNav({ title }: { title?: string }) {
-  const params = useParams();
   const pathname = usePathname();
-  const id = params.id as string;
+  const id = useInspectionRouteId();
   const [completeness, setCompleteness] = useState<Completeness | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || isClientInspectionId(id)) return;
     api.getCompleteness(Number(id)).then(setCompleteness).catch(() => setCompleteness(null));
   }, [id, pathname]);
 
@@ -35,12 +36,12 @@ export default function InspectionNav({ title }: { title?: string }) {
 
       <nav aria-label="Etapas da inspeção" className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
         {steps.map((step, index) => {
-          const href = `/inspecoes/${id}/${step.suffix}`;
+          const href = inspectionStepHref(step.suffix, id);
           const active = pathname.includes(step.suffix);
           const done = stepDone(step, completeness);
 
           return (
-            <Link
+            <InspectionStepLink
               key={step.suffix}
               href={href}
               className={`flex flex-1 items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
@@ -63,7 +64,7 @@ export default function InspectionNav({ title }: { title?: string }) {
                 {done && !active ? "✓" : index + 1}
               </span>
               <span className="text-sm font-semibold sm:text-base">{step.label}</span>
-            </Link>
+            </InspectionStepLink>
           );
         })}
       </nav>
