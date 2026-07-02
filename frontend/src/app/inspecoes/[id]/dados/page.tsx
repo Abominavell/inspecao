@@ -14,9 +14,11 @@ import Skeleton from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ToastProvider";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useInspectionRouteId } from "@/hooks/useInspectionRouteId";
+import { useLocalCompleteness } from "@/hooks/useLocalCompleteness";
 import { useLocalInspection } from "@/hooks/useLocalInspection";
 import { inspectionStepHref, navigateApp } from "@/lib/inspectionRoutes";
-import { api, Completeness, Unit, UnitInput } from "@/lib/api";
+import { api, Unit, UnitInput } from "@/lib/api";
+import type { LocalInspection } from "@/lib/db";
 import {
   cacheReferenceData,
   getCachedReference,
@@ -35,7 +37,6 @@ export default function DadosPage() {
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState("");
   const [hasAddressPhoto, setHasAddressPhoto] = useState(false);
-  const [completeness, setCompleteness] = useState<Completeness | null>(null);
   const [isStaff, setIsStaff] = useState(false);
   const { toast } = useToast();
 
@@ -59,14 +60,6 @@ export default function DadosPage() {
           if (linked) setUnit(unitToInput(linked, defaults));
         }
         setHasAddressPhoto(Boolean(local.has_address_photo));
-      }
-      if (local?.server_id && navigator.onLine) {
-        try {
-          const comp = await api.getCompleteness(local.server_id);
-          setCompleteness(comp);
-        } catch {
-          /* offline */
-        }
       }
       if (navigator.onLine) {
         try {
@@ -94,6 +87,22 @@ export default function DadosPage() {
     await saveLocalUnitData(clientId, selectedUnitId, unit);
     if (navigator.onLine) await syncEngine.syncNow();
   }, [clientId, selectedUnitId, unit]);
+
+  const localForCompleteness = useMemo((): LocalInspection | null => {
+    if (!local) return null;
+    return {
+      ...local,
+      unit_data: unit as unknown as Record<string, unknown>,
+      unit_name: unit.name,
+      unit_regional: unit.regional,
+      unit_city: unit.city,
+      has_address_photo: hasAddressPhoto || local.has_address_photo,
+    };
+  }, [local, unit, hasAddressPhoto]);
+
+  const completeness = useLocalCompleteness(clientId, localForCompleteness, savePayloadKey, {
+    enabled: ready && !!localForCompleteness,
+  });
 
   const { status: saveStatus, error: saveError } = useAutoSave(savePayloadKey, persistUnit, {
     ready: ready && selectedUnitId != null && !!clientId && !readOnly,

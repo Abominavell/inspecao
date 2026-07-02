@@ -27,6 +27,19 @@ def _answers_by_item(inspection: Inspection) -> dict[int, InspectionAnswer]:
     }
 
 
+def _is_checklist_item_complete(answer: InspectionAnswer | None) -> bool:
+    if not answer or not answer.status:
+        return False
+    if answer.status == InspectionAnswer.AnswerStatus.NC:
+        if not answer.description.strip():
+            return False
+        if not answer.recommendation.strip():
+            return False
+        if not answer.photos.exists():
+            return False
+    return True
+
+
 def get_pending_items(inspection: Inspection) -> list[str]:
     pending: list[str] = []
     answers_by_item = _answers_by_item(inspection)
@@ -160,10 +173,10 @@ def inspection_progress(inspection: Inspection) -> dict:
         for item in section.items.all():
             total_items += 1
             answer = answers_by_item.get(item.id)
-            if answer and answer.status:
+            if answer and answer.status == InspectionAnswer.AnswerStatus.NC and not answer.photos.exists():
+                nc_without_photo += 1
+            if _is_checklist_item_complete(answer):
                 answered += 1
-                if answer.status == InspectionAnswer.AnswerStatus.NC and not answer.photos.exists():
-                    nc_without_photo += 1
 
     unit = inspection.unit
     unit_fields = [
@@ -194,7 +207,7 @@ def inspection_progress(inspection: Inspection) -> dict:
         ]
     )
 
-    checklist_complete = answered == total_items and total_items > 0 and nc_without_photo == 0
+    checklist_complete = answered == total_items and total_items > 0
     pending_items = get_pending_items(inspection)
     ready_for_report = (
         unit_complete
@@ -214,6 +227,6 @@ def inspection_progress(inspection: Inspection) -> dict:
         "checklist_complete": checklist_complete,
         "nc_without_photo": nc_without_photo,
         "ready_for_report": ready_for_report,
-        "pending_items": pending_items[:30],
+        "pending_items": pending_items[:50],
         "pending_count": len(pending_items),
     }

@@ -14,9 +14,11 @@ import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import { useToast } from "@/components/ToastProvider";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useLocalCompleteness } from "@/hooks/useLocalCompleteness";
 import { useLocalInspection } from "@/hooks/useLocalInspection";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
-import { api, AuditLogEntry, Completeness, InspectionCoverInput, Scores, SsmaConfig } from "@/lib/api";
+import { api, AuditLogEntry, InspectionCoverInput, Scores, SsmaConfig } from "@/lib/api";
+import type { LocalInspection } from "@/lib/db";
 import { getCachedReference, saveLocalReport } from "@/lib/db/repositories/inspectionRepo";
 import { syncEngine } from "@/lib/sync/SyncEngine";
 
@@ -58,7 +60,6 @@ export default function RevisaoPage() {
     final_considerations_text: "",
   });
   const [scores, setScores] = useState<Scores | null>(null);
-  const [completeness, setCompleteness] = useState<Completeness | null>(null);
   const [ready, setReady] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
@@ -102,13 +103,11 @@ export default function RevisaoPage() {
       }
       if (local?.server_id && navigator.onLine) {
         try {
-          const [sc, comp, me] = await Promise.all([
+          const [sc, me] = await Promise.all([
             api.getScores(local.server_id),
-            api.getCompleteness(local.server_id),
             api.me(),
           ]);
           setScores(sc);
-          setCompleteness(comp);
           setIsStaff(me.is_staff);
           if (me.is_staff) {
             api.getAuditLog(local.server_id).then(setAuditLog).catch(() => setAuditLog([]));
@@ -127,15 +126,19 @@ export default function RevisaoPage() {
 
   const reportKey = useMemo(() => JSON.stringify({ cover, texts, clientId }), [cover, texts, clientId]);
 
+  const localForCompleteness = useMemo((): LocalInspection | null => {
+    if (!local) return null;
+    return { ...local, ...cover, ...texts };
+  }, [local, cover, texts]);
+
+  const completeness = useLocalCompleteness(clientId, localForCompleteness, reportKey, {
+    enabled: ready && !!localForCompleteness,
+  });
+
   const persistReport = useCallback(async () => {
     if (!clientId) return;
     await saveLocalReport(clientId, { ...texts, ...cover }, local?.server_id);
-    if (local?.server_id && navigator.onLine) {
-      const comp = await api.getCompleteness(local.server_id);
-      setCompleteness(comp);
-    } else if (navigator.onLine) {
-      void syncEngine.syncNow();
-    }
+    if (navigator.onLine) void syncEngine.syncNow();
   }, [clientId, texts, cover, local?.server_id]);
 
   const { status: saveStatus, error: saveError, saveNow } = useAutoSave(reportKey, persistReport, {
@@ -163,7 +166,6 @@ export default function RevisaoPage() {
         await refresh();
       }
       const comp = await api.getCompleteness(local.server_id);
-      setCompleteness(comp);
       if (!comp.ready_for_report) {
         setError(
           comp.errors.length > 0

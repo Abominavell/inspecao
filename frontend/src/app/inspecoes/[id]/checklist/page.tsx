@@ -19,7 +19,6 @@ import { inspectionStepHref, navigateApp } from "@/lib/inspectionRoutes";
 import {
   AnswerInput,
   ChecklistSection,
-  Completeness,
   Photo,
   SectionScore,
 } from "@/lib/api";
@@ -28,6 +27,8 @@ import { getCachedReference } from "@/lib/db/repositories/inspectionRepo";
 import { getLocalPhotos } from "@/lib/db/repositories/photoRepo";
 import { syncEngine } from "@/lib/sync/SyncEngine";
 import { buildSectionBatch, sectionAnswersKey } from "@/lib/checklistSave";
+import { sectionChecklistProgress } from "@/lib/completeness";
+import { useLocalCompleteness } from "@/hooks/useLocalCompleteness";
 
 type LocalAnswer = AnswerInput & {
   item_code: string;
@@ -54,12 +55,12 @@ const STATUS_STYLES = {
   },
 } as const;
 
-function sectionProgress(sec: ChecklistSection, answers: Record<number, LocalAnswer>) {
-  let answered = 0;
-  for (const item of sec.items) {
-    if (answers[item.id]?.status) answered++;
-  }
-  return { answered, total: sec.items.length };
+function sectionProgress(
+  sec: ChecklistSection,
+  answers: Record<number, LocalAnswer>,
+  ncPhotoCounts: Record<number, number>
+) {
+  return sectionChecklistProgress(sec, answers, ncPhotoCounts);
 }
 
 export default function ChecklistPage() {
@@ -73,7 +74,6 @@ export default function ChecklistPage() {
   const [sectionScore, setSectionScore] = useState<SectionScore | null>(null);
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState("");
-  const [completeness, setCompleteness] = useState<Completeness | null>(null);
   const [isStaff, setIsStaff] = useState(false);
   const { toast } = useToast();
   const serverId = local?.server_id ?? 0;
@@ -138,8 +138,6 @@ export default function ChecklistPage() {
             }
           }
         }
-        const comp = await api.getCompleteness(local.server_id);
-        setCompleteness(comp);
         const me = await api.me();
         setIsStaff(me.is_staff);
       } catch {
@@ -189,10 +187,36 @@ export default function ChecklistPage() {
       const scores = await api.getScores(local.server_id);
       const found = scores.sections.find((s) => s.section_id === current.id);
       setSectionScore(found ?? null);
-      const comp = await api.getCompleteness(local.server_id);
-      setCompleteness(comp);
     }
   }, [clientId, current, answers, local?.server_id]);
+
+  const ncPhotoCounts = useMemo(() => {
+    const counts: Record<number, number> = {};
+    for (const [itemId, previews] of Object.entries(localPreviewUrls)) {
+      counts[Number(itemId)] = previews.length;
+    }
+    return counts;
+  }, [localPreviewUrls]);
+
+  const completenessRevision = useMemo(() => {
+    const snapshot: Record<string, unknown> = { ncPhotoCounts };
+    for (const sec of sections) {
+      for (const item of sec.items) {
+        const a = answers[item.id];
+        snapshot[item.id] = a
+          ? { s: a.status, d: a.description, r: a.recommendation, p: a.photos?.length ?? 0 }
+          : null;
+      }
+    }
+    return JSON.stringify(snapshot);
+  }, [sections, answers, ncPhotoCounts]);
+
+  const completeness = useLocalCompleteness(clientId, local, completenessRevision, {
+    enabled: ready && !!local,
+    sections,
+    liveAnswers: answers,
+    liveNcPhotoCounts: ncPhotoCounts,
+  });
 
   const { status: saveStatus, error: saveError, saveNow } = useAutoSave(sectionKey, persistSection, {
     ready: ready && !!current && !readOnly,
@@ -269,7 +293,7 @@ export default function ChecklistPage() {
         />
       )}
 
-      <PendingItemsPanel completeness={completeness} />
+      <PendingItemsPanel completeness={completeness} scope="checklist" />
 
       <p className="mb-4 text-sm text-slate-600">
         Respostas da seção são salvas automaticamente. Ao marcar <strong>NC</strong>, preencha descrição e
@@ -282,7 +306,7 @@ export default function ChecklistPage() {
         <aside className="shrink-0 lg:w-72">
           <div className="max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-card p-2 shadow-sm">
             {sections.map((sec, idx) => {
-              const prog = sectionProgress(sec, answers);
+              const prog = sectionProgress(sec, answers, ncPhotoCounts);
               const pct = prog.total ? Math.round((prog.answered / prog.total) * 100) : 0;
               const complete = prog.answered === prog.total && prog.total > 0;
 
