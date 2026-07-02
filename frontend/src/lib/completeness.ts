@@ -12,14 +12,10 @@ export type LiveChecklistAnswer = {
   photos?: { id?: number }[];
 };
 
-const COVER_CHECKS: { label: string; field: keyof LocalInspection }[] = [
-  { label: "diretoria executiva (capa)", field: "cover_diretoria_executiva" },
+const EDITABLE_COVER_CHECKS: { label: string; field: keyof LocalInspection }[] = [
   { label: "diretor executivo (capa)", field: "cover_diretor_executivo" },
-  { label: "gerência geral (capa)", field: "cover_gerencia_geral" },
   { label: "gerente geral (capa)", field: "cover_gerente_geral" },
-  { label: "gerência SST (capa)", field: "cover_gerencia_sst" },
   { label: "gerente SST (capa)", field: "cover_gerente_sst" },
-  { label: "gerência de meio ambiente (capa)", field: "cover_gerencia_meio_ambiente" },
   { label: "gerente de meio ambiente (capa)", field: "cover_gerente_meio_ambiente" },
 ];
 
@@ -208,7 +204,7 @@ export async function computeLocalCompleteness(
     errors.push("Dados: envie a foto do local (endereço)");
   }
 
-  for (const { label, field } of COVER_CHECKS) {
+  for (const { label, field } of EDITABLE_COVER_CHECKS) {
     if (!String(local[field] ?? "").trim()) {
       pending.push(`Capa: ${label}`);
       errors.push(`Capa do relatório: preencha ${label}`);
@@ -226,7 +222,7 @@ export async function computeLocalCompleteness(
     UNIT_CHECKS.every(({ key }) => String(unit[key] ?? "").trim()) &&
     (unit.employee_count ?? 0) > 0;
   const addressPhotoComplete = hasAddressPhoto;
-  const coverComplete = COVER_CHECKS.every(({ field }) => String(local[field] ?? "").trim());
+  const coverComplete = EDITABLE_COVER_CHECKS.every(({ field }) => String(local[field] ?? "").trim());
   const textsComplete = TEXT_CHECKS.every(({ field }) => String(local[field] ?? "").trim());
   const checklistComplete = answered === totalItems && totalItems > 0;
   const readyForReport =

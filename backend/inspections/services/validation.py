@@ -1,23 +1,14 @@
 from inspections.models import ChecklistItem, ChecklistSection, Inspection, InspectionAnswer
-
-
-COVER_FIELDS = {
-    "diretoria executiva (capa)": "cover_diretoria_executiva",
-    "diretor executivo (capa)": "cover_diretor_executivo",
-    "gerência geral (capa)": "cover_gerencia_geral",
-    "gerente geral (capa)": "cover_gerente_geral",
-    "gerência SST (capa)": "cover_gerencia_sst",
-    "gerente SST (capa)": "cover_gerente_sst",
-    "gerência de meio ambiente (capa)": "cover_gerencia_meio_ambiente",
-    "gerente de meio ambiente (capa)": "cover_gerente_meio_ambiente",
-}
+from inspections.services.checklist_version import resolve_checklist_version
+from inspections.services.cover import EDITABLE_COVER_FIELDS
 
 
 def _sections_for_inspection(inspection: Inspection):
     qs = ChecklistSection.objects.prefetch_related("items").order_by("order")
-    if inspection.checklist_version_id:
-        return qs.filter(version_id=inspection.checklist_version_id)
-    return qs
+    version = resolve_checklist_version(inspection)
+    if version:
+        return qs.filter(version_id=version.id)
+    return qs.none()
 
 
 def _answers_by_item(inspection: Inspection) -> dict[int, InspectionAnswer]:
@@ -78,7 +69,7 @@ def get_pending_items(inspection: Inspection) -> list[str]:
     if not inspection.address_photo:
         pending.append("Foto do local (endereço)")
 
-    for label, field in COVER_FIELDS.items():
+    for label, field in EDITABLE_COVER_FIELDS.items():
         if not str(getattr(inspection, field, "")).strip():
             pending.append(f"Capa: {label}")
 
@@ -144,7 +135,7 @@ def validate_inspection_for_report(inspection: Inspection) -> list[str]:
     if not inspection.address_photo:
         errors.append("Dados: envie a foto do local (endereço)")
 
-    for label, field in COVER_FIELDS.items():
+    for label, field in EDITABLE_COVER_FIELDS.items():
         if not str(getattr(inspection, field, "")).strip():
             errors.append(f"Capa do relatório: preencha {label}")
 
@@ -193,7 +184,7 @@ def inspection_progress(inspection: Inspection) -> dict:
     address_photo_complete = bool(inspection.address_photo)
 
     cover_complete = all(
-        str(getattr(inspection, field, "")).strip() for field in COVER_FIELDS.values()
+        str(getattr(inspection, field, "")).strip() for field in EDITABLE_COVER_FIELDS.values()
     )
 
     texts_complete = all(
