@@ -2,6 +2,7 @@
 
 import AppLogo from "@/components/AppLogo";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
+import { useCampoAuth } from "@/components/CampoAuthGate";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,33 +13,85 @@ import { ToastProvider } from "@/components/ToastProvider";
 import { api, clearToken, getToken, setToken } from "@/lib/api";
 import { db } from "@/lib/db";
 import { cacheReferenceData } from "@/lib/db/repositories/inspectionRepo";
-import { warmAppShellRoutes } from "@/lib/inspectionRoutes";
+import { normalizeAppHref, shouldUseHardNavigation, warmAppShellRoutes } from "@/lib/inspectionRoutes";
+import { openCampoLogin } from "@/lib/campoAuth";
+import { logoutFieldApp } from "@/lib/localAuth";
+import { isFieldApp, isNativeApp } from "@/lib/runtime";
+
+function isLoginPath(pathname: string): boolean {
+  return pathname === "/login" || pathname === "/login/" || pathname.startsWith("/login/");
+}
+
+function isMasterPath(pathname: string): boolean {
+  return (
+    pathname === "/admin-master" ||
+    pathname === "/admin-master/" ||
+    pathname.startsWith("/admin-master/")
+  );
+}
 
 const baseNav = [
   { href: "/", label: "Dashboard" },
-  { href: "/unidades", label: "Unidades" },
   { href: "/inspecoes/nova", label: "Nova inspeção" },
 ];
+
+function ShellLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const normalized = normalizeAppHref(href);
+  if (shouldUseHardNavigation(normalized)) {
+    return (
+      <a href={normalized} className={className}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={normalized} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+const webNavExtra = [{ href: "/unidades", label: "Unidades" }];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const fieldAuth = useCampoAuth();
   const [userName, setUserName] = useState("");
   const [isStaff, setIsStaff] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const isLogin = pathname === "/login";
+  const isLogin = isLoginPath(pathname);
+  const isMaster = isMasterPath(pathname);
 
-  const nav = useMemo(
-    () =>
-      isStaff ? [...baseNav, { href: "/usuarios", label: "Usuários" }] : baseNav,
-    [isStaff]
-  );
+  const fieldApp = isFieldApp();
+  const fieldUserName = fieldAuth?.session.user_name ?? "";
+  const fieldIsStaff = fieldAuth?.session.is_admin ?? false;
+
+  const nav = useMemo(() => {
+    const staff = fieldApp ? fieldIsStaff : isStaff;
+    if (fieldApp) {
+      const items = [...baseNav];
+      if (staff) items.push({ href: "/usuarios", label: "Usuários" });
+      return items;
+    }
+    const items = [...baseNav.slice(0, 1), ...webNavExtra, baseNav[1]];
+    return staff ? [...items, { href: "/usuarios", label: "Usuários" }] : items;
+  }, [isStaff, fieldIsStaff, fieldApp]);
 
   useEffect(() => {
-    if (isLogin) return;
+    if (isLogin || isMaster || fieldApp) return;
+
     async function ensureAuth() {
       if (getToken()) {
         try {
@@ -91,7 +144,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       router.replace("/login");
     }
     void ensureAuth();
-  }, [isLogin, router, pathname]);
+  }, [isLogin, isMaster, router, pathname, fieldApp]);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -109,23 +162,55 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [userMenuOpen]);
 
-  if (isLogin) return <>{children}</>;
+  const displayName = fieldApp ? fieldUserName : userName;
+
+  async function handleLogout() {
+    if (isNativeApp()) {
+      await logoutFieldApp();
+      await openCampoLogin();
+      return;
+    }
+    if (fieldApp) {
+      await fieldAuth?.logout();
+      return;
+    }
+    try {
+      const { clearWebSession, getAuthContext } = await import("@/lib/webAuth");
+      const { db } = await import("@/lib/db");
+      const { api } = await import("@/lib/api");
+      const ctx = getAuthContext();
+      const session = await db.auth_session.get(1);
+      if (ctx === "master" && session?.refresh_token) {
+        await api.masterLogout(session.refresh_token).catch(() => undefined);
+      }
+      await clearWebSession();
+      if (ctx !== "master" && process.env.NEXT_PUBLIC_AUTH_ENTRA_ENABLED === "true") {
+        const { signOut } = await import("next-auth/react");
+        await signOut({ redirect: false });
+      }
+    } catch {
+      clearToken();
+    }
+    router.push("/login");
+  }
+
+  if (isLogin || isMaster) return <>{children}</>;
 
   return (
     <ToastProvider>
       <div className="min-h-screen bg-background">
-        <SyncStatusBar />
-        <SyncConflictHandler />
-        <OfflineIndicator />
+        {!fieldApp && <SyncStatusBar />}
+        {!fieldApp && <SyncConflictHandler />}
+        {!fieldApp && <OfflineIndicator />}
         <header className="border-b border-border bg-card shadow-sm">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
             <div className="flex items-center gap-4">
-              <Link href="/" className="flex items-center gap-3">
+              <ShellLink href="/" className="flex items-center gap-3">
                 <AppLogo variant="header" />
                 <span className="hidden text-sm font-medium text-slate-600 sm:inline">
                   Inspeção SSMA
                 </span>
-              </Link>
+              </ShellLink>
               <nav className="hidden gap-1 md:flex">
                 {nav.map((item) => {
                   const active =
@@ -133,7 +218,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       ? pathname === "/"
                       : pathname.startsWith(item.href);
                   return (
-                    <Link
+                    <ShellLink
                       key={item.href}
                       href={item.href}
                       className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -143,12 +228,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       }`}
                     >
                       {item.label}
-                    </Link>
+                    </ShellLink>
                   );
                 })}
               </nav>
             </div>
             <div className="flex items-center gap-2">
+              {fieldApp && displayName && (
+                <span className="max-w-[8rem] truncate text-sm text-slate-600 sm:max-w-none">
+                  {displayName}
+                </span>
+              )}
               <div className="relative hidden sm:block" ref={userMenuRef}>
                 <button
                   type="button"
@@ -157,12 +247,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   aria-expanded={userMenuOpen}
                   aria-haspopup="menu"
                 >
-                  <span>{userName || "Usuário"}</span>
+                  <span>{displayName || "Usuário"}</span>
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                {userMenuOpen && (
+                {userMenuOpen && !fieldApp && (
                   <div
                     role="menu"
                     className="absolute right-0 z-20 mt-1 min-w-[10rem] rounded-lg border border-border bg-card py-1 shadow-lg"
@@ -198,10 +288,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 onClick={() => {
-                  clearToken();
-                  router.push("/login");
+                  void handleLogout();
                 }}
-                className="hidden rounded-lg bg-slate-100 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-200 sm:inline"
+                className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200"
               >
                 Sair
               </button>
@@ -211,14 +300,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <nav className="border-t border-border bg-card px-4 py-3 md:hidden">
               <div className="flex flex-col gap-1">
                 {nav.map((item) => (
-                  <Link
+                  <ShellLink
                     key={item.href}
                     href={item.href}
                     className="rounded-lg px-3 py-3 text-sm font-medium text-slate-700 hover:bg-emserh-green-light"
                   >
                     {item.label}
-                  </Link>
+                  </ShellLink>
                 ))}
+                {!fieldApp && (
                 <button
                   type="button"
                   onClick={() => {
@@ -229,15 +319,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 >
                   Alterar senha
                 </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
-                    clearToken();
-                    router.push("/login");
+                    setMenuOpen(false);
+                    void handleLogout();
                   }}
-                  className="rounded-lg px-3 py-3 text-left text-sm text-slate-700 hover:bg-slate-100"
+                  className="rounded-lg px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
                 >
-                  Sair
+                  Sair / trocar usuário
                 </button>
               </div>
             </nav>

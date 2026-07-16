@@ -1,15 +1,19 @@
 import withSerwistInit from "@serwist/next";
 import type { NextConfig } from "next";
 
-const withSerwist = withSerwistInit({
-  swSrc: "src/sw.ts",
-  swDest: "public/sw.js",
-  disable: process.env.NODE_ENV === "development",
-});
+const isCapacitor = process.env.CAPACITOR === "true";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: isCapacitor ? "export" : "standalone",
+  images: { unoptimized: true },
+  ...(isCapacitor ? { trailingSlash: true } : {}),
   turbopack: {},
 };
 
-export default withSerwist(nextConfig);
+const withSerwist = withSerwistInit({
+  swSrc: "src/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development" || isCapacitor,
+});
+
+export default isCapacitor ? nextConfig : withSerwist(nextConfig);

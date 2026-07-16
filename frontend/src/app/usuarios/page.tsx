@@ -4,9 +4,33 @@ import { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
+import LocalUsersPanel from "@/components/LocalUsersPanel";
 import { api, UserAccount } from "@/lib/api";
+import { getValidLocalSession } from "@/lib/localAuth";
+import { navigateApp } from "@/lib/inspectionRoutes";
+import { isFieldApp } from "@/lib/runtime";
 
 export default function UsuariosPage() {
+  const fieldApp = isFieldApp();
+  const [allowed, setAllowed] = useState(!fieldApp);
+
+  useEffect(() => {
+    if (!fieldApp) return;
+    void getValidLocalSession().then((session) => {
+      if (!session?.is_admin) navigateApp("/");
+      else setAllowed(true);
+    });
+  }, [fieldApp]);
+
+  if (fieldApp) {
+    if (!allowed) return null;
+    return <LocalUsersPanel />;
+  }
+
+  return <WebUsuariosPage />;
+}
+
+function WebUsuariosPage() {
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

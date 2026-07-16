@@ -22,6 +22,13 @@ import type { LocalInspection } from "@/lib/db";
 import { getCachedReference, saveLocalReport } from "@/lib/db/repositories/inspectionRepo";
 import { syncEngine } from "@/lib/sync/SyncEngine";
 import { syncInspectionForReport } from "@/lib/sync/syncInspectionForReport";
+import { isFieldApp } from "@/lib/runtime";
+import { computeLocalCompleteness } from "@/lib/completeness";
+import { getLocalAnswers } from "@/lib/db/repositories/answerRepo";
+import { getLocalPhotos, getAddressPhoto } from "@/lib/db/repositories/photoRepo";
+import { resolveFullUnit } from "@/lib/db/repositories/inspectionRepo";
+import { generateOfflinePdf, downloadBlob } from "@/lib/report/generatePdf";
+import type { ChecklistSection } from "@/lib/api";
 
 const emptyCover = (): InspectionCoverInput => ({
   cover_diretor_executivo: "",
@@ -48,6 +55,7 @@ const textFields = [
 
 export default function RevisaoPage() {
   const rawId = useInspectionRouteId();
+  const fieldApp = isFieldApp();
   const online = useOnlineStatus();
   const {
     local,
@@ -169,19 +177,86 @@ export default function RevisaoPage() {
   });
 
   async function downloadPdf() {
-    if (!online) {
-      setError("Conecte-se à internet antes de gerar o PDF.");
-      return;
-    }
-    if (!local?.server_id) {
-      setError("A inspeção ainda não foi sincronizada com o servidor. Use “Sincronizar agora” no topo.");
-      return;
-    }
     setGenerating(true);
     setError("");
     try {
+      if (!readOnly) await saveNow();
+
+      if (isFieldApp()) {
+        if (!local || !clientId) return;
+        const sections =
+          (await getCachedReference<ChecklistSection[]>("checklist")) ?? [];
+        const comp = await computeLocalCompleteness({
+          clientId,
+          local,
+          sections,
+          liveAnswers: undefined,
+        });
+        if (!comp.ready_for_report) {
+          setError(
+            comp.errors.length > 0
+              ? comp.errors.join("\n")
+              : "Complete todos os campos antes de gerar o relatório."
+          );
+          return;
+        }
+        const unit = (local.unit_data as import("@/lib/api").UnitInput) ??
+          (await resolveFullUnit(local.unit_id ?? 0));
+        if (!unit) {
+          setError("Dados da unidade incompletos.");
+          return;
+        }
+        const ssma =
+          (await getCachedReference<SsmaConfig>("ssma")) ?? {
+            diretor_executivo: "",
+            gerente_geral: "",
+            gerente_sst: "",
+            gerente_meio_ambiente: "",
+            diretoria_executiva: "",
+            gerencia_geral: "",
+            gerencia_sst: "",
+            gerencia_meio_ambiente: "",
+            regional: "",
+            cidade: "",
+          };
+        const answers = await getLocalAnswers(clientId);
+        const photos = await getLocalPhotos(clientId);
+        const addressPhoto = await getAddressPhoto(clientId);
+        let addressPhotoUri: string | undefined;
+        if (addressPhoto?.blob) {
+          addressPhotoUri = await new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result as string);
+            r.onerror = rej;
+            r.readAsDataURL(addressPhoto.blob);
+          });
+        }
+        const { blob } = await generateOfflinePdf(clientId, {
+          inspection: local,
+          unit,
+          ssma,
+          sections,
+          answers,
+          photos,
+          addressPhotoUri,
+          logoUri: "/emserh-logo.png",
+        });
+        const slug = (local.unit_name ?? "inspecao").replace(/\W+/g, "_").slice(0, 40);
+        await downloadBlob(blob, `relatorio_${slug}_${local.inspection_date}.pdf`);
+        toast("Relatório gerado e salvo no tablet", "success");
+        await load();
+        return;
+      }
+
+      if (!online) {
+        setError("Conecte-se à internet antes de gerar o PDF.");
+        return;
+      }
+      if (!local?.server_id) {
+        setError("A inspeção ainda não foi sincronizada com o servidor. Use “Sincronizar agora” no topo.");
+        return;
+      }
       if (!readOnly) {
-        await saveNow();
         await api.updateInspection(local.server_id, { ...texts, ...cover });
         await refresh();
       }
@@ -239,11 +314,12 @@ export default function RevisaoPage() {
       <PendingItemsPanel completeness={completeness} />
 
       <p className="mb-4 text-sm text-slate-600">
-        Capa e textos são salvos localmente. O PDF só pode ser gerado online, após sincronização com o
-        servidor.
+        {fieldApp
+          ? "Capa e textos são salvos neste tablet. O PDF é gerado localmente, sem internet."
+          : "Capa e textos são salvos localmente. O PDF só pode ser gerado online, após sincronização com o servidor."}
       </p>
 
-      {!canGeneratePdf && !readOnly && (
+      {!canGeneratePdf && !readOnly && !fieldApp && (
         <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           {!online
             ? "Sem conexão — continue editando; o PDF ficará disponível após reconectar."
@@ -394,7 +470,11 @@ export default function RevisaoPage() {
             type="button"
             size="lg"
             onClick={downloadPdf}
-            disabled={generating || saveStatus === "saving" || !local?.server_id || !online}
+            disabled={
+              generating ||
+              saveStatus === "saving" ||
+              (!fieldApp && (!local?.server_id || !online))
+            }
             className="shadow-md"
           >
             {generating ? "Gerando PDF..." : "📄 Gerar e baixar relatório PDF"}

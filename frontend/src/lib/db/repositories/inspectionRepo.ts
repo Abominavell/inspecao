@@ -1,5 +1,6 @@
 import { api, Inspection, Unit, UnitInput } from "@/lib/api";
 import { db, LocalInspection, newClientId, SyncMutation } from "@/lib/db";
+import { isFieldApp } from "@/lib/runtime";
 import { unitToInput } from "@/lib/unitForm";
 
 function isUnitInputComplete(unit: Partial<UnitInput>): boolean {
@@ -126,12 +127,14 @@ export async function createLocalInspection(input: {
     created_at: now,
   };
   await db.inspections.put(record);
-  await enqueueMutation("inspection.create", {
-    client_id,
-    unit_id: input.unit_id,
-    inspection_date: input.inspection_date,
-    report_date: input.report_date,
-  });
+  if (!isFieldApp()) {
+    await enqueueMutation("inspection.create", {
+      client_id,
+      unit_id: input.unit_id,
+      inspection_date: input.inspection_date,
+      report_date: input.report_date,
+    });
+  }
   return record;
 }
 
@@ -264,7 +267,8 @@ export async function saveLocalReport(
 export async function enqueueMutation(
   type: string,
   payload: Record<string, unknown>
-): Promise<SyncMutation> {
+): Promise<SyncMutation | null> {
+  if (isFieldApp()) return null;
   const mutation: SyncMutation = {
     mutation_id: newClientId(),
     type,

@@ -2,7 +2,6 @@
 
 import AppLogo from "@/components/AppLogo";
 import InspectionStepLink from "@/components/InspectionStepLink";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
@@ -11,13 +10,15 @@ import Select from "@/components/ui/Select";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { TableSkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ToastProvider";
-import { api, Inspection, InspectionFilters, Unit } from "@/lib/api";
+import { Inspection, InspectionFilters } from "@/lib/api";
+import { ensureReferenceData } from "@/lib/bundledData";
 import {
-  cacheReferenceData,
   listLocalInspections,
   localToInspectionDisplay,
 } from "@/lib/db/repositories/inspectionRepo";
-import { inspectionStepHref, warmAppShellRoutes } from "@/lib/inspectionRoutes";
+import { inspectionStepHref } from "@/lib/inspectionRoutes";
+import { exportAllBackups, triggerDownload } from "@/lib/backup/export";
+import { isFieldApp } from "@/lib/runtime";
 import type { SyncStatus } from "@/lib/db";
 
 type DashboardInspection = Inspection & {
@@ -27,8 +28,9 @@ type DashboardInspection = Inspection & {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const fieldApp = isFieldApp();
   const [inspections, setInspections] = useState<DashboardInspection[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
+  const [units, setUnits] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [isStaff, setIsStaff] = useState(false);
   const [filters, setFilters] = useState<InspectionFilters>({ archived: "false" });
@@ -36,59 +38,104 @@ export default function DashboardPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    if (navigator.onLine) {
-      void cacheReferenceData();
-      warmAppShellRoutes();
+    if (fieldApp) {
+      void ensureReferenceData();
+      Promise.all([
+        listLocalInspections(),
+        import("@/lib/db/repositories/localUnitRepo").then((m) => m.listAllUnits()),
+        import("@/lib/localAuth").then((m) => m.getValidLocalSession()),
+      ])
+        .then(([localList, unitList, session]) => {
+          const rows: DashboardInspection[] = localList
+            .filter((l) => {
+              if (filters.archived === "true" && !l.is_archived) return false;
+              if (filters.archived === "false" && l.is_archived) return false;
+              if (filters.status && l.status !== filters.status) return false;
+              if (filters.search) {
+                const q = filters.search.toLowerCase();
+                if (!(l.unit_name ?? "").toLowerCase().includes(q)) return false;
+              }
+              if (filters.unit_id && l.unit_id !== filters.unit_id) return false;
+              return true;
+            })
+            .map((l) => ({
+              ...localToInspectionDisplay(l),
+              routeId: l.client_id,
+              sync_status: l.sync_status,
+            }));
+          setInspections(rows);
+          setUnits(unitList.map((u) => ({ id: u.id, name: u.name })));
+          setIsStaff(session?.is_admin ?? false);
+        })
+        .finally(() => setLoading(false));
+      return;
     }
-    Promise.all([
-      navigator.onLine ? api.getInspections(filters) : Promise.resolve([] as Inspection[]),
-      navigator.onLine ? api.getUnits() : import("@/lib/db/repositories/inspectionRepo").then((m) => m.getCachedReference<Unit[]>("units").then((u) => u ?? [])),
-      navigator.onLine ? api.me() : Promise.resolve({ is_staff: false, name: "" } as Awaited<ReturnType<typeof api.me>>),
-      listLocalInspections(),
-    ])
-      .then(([serverList, unitList, me, localList]) => {
-        const serverIds = new Set(serverList.map((i) => i.id));
-        const localRows: DashboardInspection[] = localList
-          .filter((l) => !l.server_id || !serverIds.has(l.server_id))
-          .filter((l) => {
-            if (filters.archived === "true" && !l.is_archived) return false;
-            if (filters.archived === "false" && l.is_archived) return false;
-            if (filters.status && l.status !== filters.status) return false;
-            if (filters.search) {
-              const q = filters.search.toLowerCase();
-              if (!(l.unit_name ?? "").toLowerCase().includes(q)) return false;
-            }
-            if (filters.unit_id && l.unit_id !== filters.unit_id) return false;
-            return true;
-          })
-          .map((l) => ({
-            ...localToInspectionDisplay(l),
-            routeId: l.client_id,
-            sync_status: l.sync_status,
+
+    void import("@/lib/db/repositories/inspectionRepo").then((m) => {
+      if (navigator.onLine) {
+        m.cacheReferenceData();
+        import("@/lib/inspectionRoutes").then((r) => r.warmAppShellRoutes());
+      }
+    });
+    void import("@/lib/api").then(({ api }) => {
+      Promise.all([
+        navigator.onLine ? api.getInspections(filters) : Promise.resolve([] as Inspection[]),
+        navigator.onLine
+          ? api.getUnits()
+          : import("@/lib/db/repositories/inspectionRepo").then((m) =>
+              m.getCachedReference<{ id: number; name: string }[]>("units").then((u) => u ?? [])
+            ),
+        navigator.onLine
+          ? api.me()
+          : Promise.resolve({ is_staff: false, name: "" } as Awaited<ReturnType<typeof api.me>>),
+        listLocalInspections(),
+      ])
+        .then(([serverList, unitList, me, localList]) => {
+          const serverIds = new Set(serverList.map((i) => i.id));
+          const localRows: DashboardInspection[] = localList
+            .filter((l) => !l.server_id || !serverIds.has(l.server_id))
+            .filter((l) => {
+              if (filters.archived === "true" && !l.is_archived) return false;
+              if (filters.archived === "false" && l.is_archived) return false;
+              if (filters.status && l.status !== filters.status) return false;
+              if (filters.search) {
+                const q = filters.search.toLowerCase();
+                if (!(l.unit_name ?? "").toLowerCase().includes(q)) return false;
+              }
+              if (filters.unit_id && l.unit_id !== filters.unit_id) return false;
+              return true;
+            })
+            .map((l) => ({
+              ...localToInspectionDisplay(l),
+              routeId: l.client_id,
+              sync_status: l.sync_status,
+            }));
+          const serverRows: DashboardInspection[] = serverList.map((i) => ({
+            ...i,
+            routeId: String(i.id),
+            sync_status: "synced" as const,
           }));
-        const serverRows: DashboardInspection[] = serverList.map((i) => ({
-          ...i,
-          routeId: String(i.id),
-          sync_status: "synced" as const,
-        }));
-        const merged = [...localRows, ...serverRows].sort(
-          (a, b) =>
-            new Date(b.inspection_date).getTime() - new Date(a.inspection_date).getTime()
-        );
-        setInspections(merged);
-        setUnits(unitList);
-        setIsStaff(me.is_staff);
-      })
-      .finally(() => setLoading(false));
-  }, [filters]);
+          const merged = [...localRows, ...serverRows].sort(
+            (a, b) =>
+              new Date(b.inspection_date).getTime() - new Date(a.inspection_date).getTime()
+          );
+          setInspections(merged);
+          setUnits(unitList.map((u) => ({ id: u.id, name: u.name })));
+          setIsStaff(me.is_staff);
+        })
+        .finally(() => setLoading(false));
+    });
+  }, [filters, fieldApp]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   async function handleArchive(id: number) {
+    if (fieldApp) return;
     if (!confirm("Arquivar esta inspeção?")) return;
     try {
+      const { api } = await import("@/lib/api");
       await api.archiveInspection(id);
       toast("Inspeção arquivada", "success");
       load();
@@ -98,7 +145,9 @@ export default function DashboardPage() {
   }
 
   async function handleClone(id: number) {
+    if (fieldApp) return;
     try {
+      const { api } = await import("@/lib/api");
       const clone = await api.cloneInspection(id);
       toast("Nova inspeção criada a partir da anterior", "success");
       router.push(`/inspecoes/${clone.id}/dados`);
@@ -123,9 +172,28 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-slate-800">Inspeções</h1>
           <p className="text-sm text-slate-500">Diagnóstico de Saúde, Segurança e Meio Ambiente</p>
         </div>
-        <Link href="/inspecoes/nova">
-          <Button>Nova inspeção</Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {fieldApp && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={async () => {
+                try {
+                  const blob = await exportAllBackups();
+                  triggerDownload(blob, `backup_inspecoes_${new Date().toISOString().slice(0, 10)}.zip`);
+                  toast("Backup exportado", "success");
+                } catch (e) {
+                  toast(e instanceof Error ? e.message : "Erro ao exportar", "error");
+                }
+              }}
+            >
+              Exportar backup
+            </Button>
+          )}
+          <InspectionStepLink href="/inspecoes/nova">
+            <Button>Nova inspeção</Button>
+          </InspectionStepLink>
+        </div>
       </div>
 
       <div className="mb-6 grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -206,9 +274,9 @@ export default function DashboardPage() {
         <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
           <AppLogo variant="empty" />
           <p className="text-slate-600">Nenhuma inspeção encontrada.</p>
-          <Link href="/inspecoes/nova" className="mt-4 inline-block">
+          <InspectionStepLink href="/inspecoes/nova" className="mt-4 inline-block">
             <Button size="sm">Criar inspeção</Button>
-          </Link>
+          </InspectionStepLink>
         </div>
       ) : (
         <>

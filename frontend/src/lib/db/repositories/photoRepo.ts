@@ -1,5 +1,7 @@
 import { db, LocalPhoto, newClientId } from "@/lib/db";
 import { enqueueMutation } from "@/lib/db/repositories/inspectionRepo";
+import { blobToBase64, savePhotoFile } from "@/lib/native/filesystem";
+import { isFieldApp } from "@/lib/runtime";
 
 export async function saveLocalPhoto(input: {
   inspectionClientId: string;
@@ -18,9 +20,18 @@ export async function saveLocalPhoto(input: {
     blob: input.blob,
     original_filename: input.originalFilename,
     photo_type: input.photoType,
-    sync_status: "pending",
+    sync_status: isFieldApp() ? "local" : "pending",
     created_at: new Date().toISOString(),
   };
+  if (isFieldApp()) {
+    const b64 = await blobToBase64(input.blob);
+    const ext = input.originalFilename.split(".").pop() || "jpg";
+    photo.file_path = await savePhotoFile(
+      input.inspectionClientId,
+      `${client_photo_id}.${ext}`,
+      b64
+    );
+  }
   await db.photos.put(photo);
   await enqueueMutation("photo.upload", {
     client_photo_id,

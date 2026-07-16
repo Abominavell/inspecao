@@ -19,13 +19,16 @@ import { useLocalInspection } from "@/hooks/useLocalInspection";
 import { inspectionStepHref, navigateApp } from "@/lib/inspectionRoutes";
 import { api, Unit, UnitInput } from "@/lib/api";
 import type { LocalInspection } from "@/lib/db";
+import { ensureReferenceData } from "@/lib/bundledData";
 import {
   cacheReferenceData,
   getCachedReference,
   saveLocalUnitData,
 } from "@/lib/db/repositories/inspectionRepo";
+import { listAllUnits } from "@/lib/db/repositories/localUnitRepo";
 import { syncEngine } from "@/lib/sync/SyncEngine";
 import { emptyUnitInput, unitToInput } from "@/lib/unitForm";
+import { isFieldApp } from "@/lib/runtime";
 
 export default function DadosPage() {
   const router = useRouter();
@@ -43,8 +46,11 @@ export default function DadosPage() {
   useEffect(() => {
     let active = true;
     async function load() {
-      if (navigator.onLine) await cacheReferenceData();
-      const list = (await getCachedReference<Unit[]>("units")) ?? [];
+      if (isFieldApp()) await ensureReferenceData();
+      else if (navigator.onLine) await cacheReferenceData();
+      const list = isFieldApp()
+        ? await listAllUnits()
+        : (await getCachedReference<Unit[]>("units")) ?? [];
       const defaults = (await getCachedReference<{ regional: string; cidade: string }>("ssma")) ?? {
         regional: "",
         cidade: "",
@@ -149,7 +155,9 @@ export default function DadosPage() {
       <PendingItemsPanel completeness={completeness} />
 
       <p className="mb-4 text-sm text-slate-600">
-        Os dados são salvos no tablet e sincronizados automaticamente quando houver internet.
+        {isFieldApp()
+          ? "Os dados são salvos neste tablet."
+          : "Os dados são salvos no tablet e sincronizados automaticamente quando houver internet."}
       </p>
 
       <AutoSaveIndicator status={saveStatus} error={saveError} />

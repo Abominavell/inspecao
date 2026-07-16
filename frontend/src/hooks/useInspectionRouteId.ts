@@ -2,6 +2,7 @@
 
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getActiveInspectionClientId } from "@/lib/inspectionRoutes";
 
 function queryIdFromUrl(): string {
   if (typeof window === "undefined") return "";
@@ -13,10 +14,16 @@ export function useInspectionRouteId(): string {
   const params = useParams();
   const pathname = usePathname();
   const isOfflineRoute = pathname.includes("/inspecoes/i/");
-  const [queryId, setQueryId] = useState(() => (isOfflineRoute ? queryIdFromUrl() : ""));
+  const [queryId, setQueryId] = useState(() => {
+    if (!isOfflineRoute) return "";
+    return queryIdFromUrl() || getActiveInspectionClientId();
+  });
 
   useEffect(() => {
-    if (isOfflineRoute) setQueryId(queryIdFromUrl());
+    if (!isOfflineRoute) return;
+    const fromUrl = queryIdFromUrl();
+    const id = fromUrl || getActiveInspectionClientId();
+    setQueryId(id);
   }, [isOfflineRoute, pathname]);
 
   if (isOfflineRoute) return queryId;

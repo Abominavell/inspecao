@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "accounts.apps.AccountsConfig",
     "inspections.apps.InspectionsConfig",
 ]
@@ -140,12 +141,38 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=int(os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "8"))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))),
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@ssma.com.br")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 ADMIN_NAME = os.getenv("ADMIN_NAME", "Administrador SSMA")
+
+# Feature flags — autenticação dual
+AUTH_ENTRA_ENABLED = os.getenv("AUTH_ENTRA_ENABLED", "false").lower() in ("1", "true", "yes")
+AUTH_MASTER_ENABLED = os.getenv("AUTH_MASTER_ENABLED", "true").lower() in ("1", "true", "yes")
+AUTH_LEGACY_PASSWORD_LOGIN = os.getenv("AUTH_LEGACY_PASSWORD_LOGIN", "true").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+AUTH_LEGACY_LOGIN_MASTER_ONLY = os.getenv("AUTH_LEGACY_LOGIN_MASTER_ONLY", "false").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+# Microsoft Entra ID
+AUTH_ENTRA_TENANT_ID = os.getenv("AUTH_ENTRA_TENANT_ID", "")
+AUTH_ENTRA_CLIENT_ID = os.getenv("AUTH_ENTRA_CLIENT_ID", "")
+AUTH_ENTRA_API_AUDIENCE = os.getenv("AUTH_ENTRA_API_AUDIENCE", "")
+AUTH_ENTRA_ALLOWED_TENANTS = os.getenv(
+    "AUTH_ENTRA_ALLOWED_TENANTS",
+    AUTH_ENTRA_TENANT_ID,
+)
 
 SSMA_CONFIG_PATH = BASE_DIR / "config" / "ssma.yaml"
 

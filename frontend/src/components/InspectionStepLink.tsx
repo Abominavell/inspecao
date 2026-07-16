@@ -1,6 +1,6 @@
 "use client";
 
-import { inspectionStepUsesHardNav } from "@/lib/inspectionRoutes";
+import { normalizeAppHref, setActiveInspectionClientId, shouldUseHardNavigation } from "@/lib/inspectionRoutes";
 import Link from "next/link";
 
 type Props = {
@@ -9,17 +9,30 @@ type Props = {
   children: React.ReactNode;
 };
 
-/** Rotas `/inspecoes/i/*` e `/inspecoes/nova` usam `<a>` para o SW servir precache offline. */
+/** No APK e rotas `/inspecoes/i/*`, usa `<a>` para carregar o HTML estático correto. */
 export default function InspectionStepLink({ href, className, children }: Props) {
-  if (inspectionStepUsesHardNav(href)) {
+  const normalized = normalizeAppHref(href);
+  const hardNav = shouldUseHardNavigation(normalized);
+
+  function rememberInspectionId() {
+    try {
+      const url = new URL(normalized, typeof window !== "undefined" ? window.location.origin : "https://localhost");
+      const id = url.searchParams.get("id");
+      if (id) setActiveInspectionClientId(id);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (hardNav) {
     return (
-      <a href={href} className={className}>
+      <a href={normalized} className={className} onClick={rememberInspectionId}>
         {children}
       </a>
     );
   }
   return (
-    <Link href={href} className={className}>
+    <Link href={normalized} className={className}>
       {children}
     </Link>
   );

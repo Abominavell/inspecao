@@ -8,6 +8,7 @@ import {
 } from "@/lib/db/repositories/inspectionRepo";
 import { LocalInspection } from "@/lib/db";
 import { api, Inspection } from "@/lib/api";
+import { isFieldApp } from "@/lib/runtime";
 
 export function useLocalInspection(idOrClientId: string | number) {
   const [local, setLocal] = useState<LocalInspection | null>(null);
@@ -21,7 +22,7 @@ export function useLocalInspection(idOrClientId: string | number) {
       if (!active) return;
       setClientId(cid);
       let record = await getLocalInspection(cid);
-      if (!record && !cid.includes("-") && navigator.onLine) {
+      if (!isFieldApp() && !record && !cid.includes("-") && navigator.onLine) {
         try {
           const server = await api.getInspection(Number(cid));
           const { upsertLocalFromServer } = await import("@/lib/db/repositories/inspectionRepo");
@@ -31,7 +32,7 @@ export function useLocalInspection(idOrClientId: string | number) {
         } catch {
           // keep null
         }
-      } else if (record?.server_id && navigator.onLine) {
+      } else if (!isFieldApp() && record?.server_id && navigator.onLine) {
         try {
           const { hydrateInspectionFromServer } = await import("@/lib/hydrateInspectionFromServer");
           await hydrateInspectionFromServer(record.client_id, record.server_id);
@@ -52,10 +53,9 @@ export function useLocalInspection(idOrClientId: string | number) {
 
   const inspection: Inspection | null = local ? localToInspectionDisplay(local) : null;
   const readOnly = local?.status === "finalizado" || Boolean(local?.is_archived);
-  const canGeneratePdf =
-    Boolean(local?.server_id) &&
-    typeof navigator !== "undefined" &&
-    navigator.onLine;
+  const canGeneratePdf = isFieldApp()
+    ? Boolean(local) && !readOnly
+    : Boolean(local?.server_id) && typeof navigator !== "undefined" && navigator.onLine;
 
   return { local, clientId, inspection, loading, readOnly, canGeneratePdf, refresh: async () => {
     const record = await getLocalInspection(clientId);

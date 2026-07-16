@@ -1,46 +1,19 @@
 from django.contrib.auth import get_user_model
 from rest_framework import status, viewsets
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from rest_framework_simplejwt.views import TokenRefreshView
-
+from .permissions import IsStaffOrMaster
 from .serializers import (
     ChangePasswordSerializer,
-    EmailTokenObtainPairSerializer,
-    LoginSerializer,
     UserCreateSerializer,
     UserSerializer,
     UserStatusSerializer,
 )
 
 User = get_user_model()
-
-
-class LoginJSONView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        token_serializer = EmailTokenObtainPairSerializer(
-            data={
-                "email": serializer.validated_data["email"].lower(),
-                "password": serializer.validated_data["password"],
-            }
-        )
-        token_serializer.is_valid(raise_exception=True)
-        refresh = token_serializer.validated_data.get("refresh")
-        return Response(
-            {
-                "access_token": token_serializer.validated_data["access"],
-                "refresh_token": str(refresh) if refresh else None,
-                "token_type": "bearer",
-            }
-        )
 
 
 class MeView(APIView):
@@ -62,7 +35,7 @@ class ChangePasswordView(APIView):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.order_by("email")
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsStaffOrMaster]
 
     def get_serializer_class(self):
         if self.action == "create":

@@ -82,6 +82,32 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
+  masterLogin: (email: string, password: string) =>
+    request<{
+      access_token: string;
+      refresh_token?: string | null;
+      user: UserAccount;
+    }>("/auth/master/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+
+  masterLogout: (refreshToken: string) =>
+    request<{ detail: string }>("/auth/master/logout", {
+      method: "POST",
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    }),
+
+  entraExchange: (accessToken: string) =>
+    request<{
+      access_token: string;
+      refresh_token?: string | null;
+      user: UserAccount;
+    }>("/auth/entra/exchange", {
+      method: "POST",
+      body: JSON.stringify({ access_token: accessToken }),
+    }),
+
   refreshToken: (refresh: string) =>
     request<{ access_token: string; refresh_token?: string }>("/auth/token/refresh", {
       method: "POST",
@@ -387,7 +413,11 @@ export type UserAccount = {
   name: string;
   is_staff: boolean;
   is_active: boolean;
+  is_superuser?: boolean;
+  auth_source?: "LEGACY" | "ENTRA" | "INTERNAL_MASTER";
+  role?: string;
   date_joined: string;
+  last_authenticated_at?: string | null;
 };
 
 export type UserCreateInput = {

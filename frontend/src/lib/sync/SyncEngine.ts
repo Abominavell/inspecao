@@ -209,6 +209,10 @@ export async function saveAuthSession(
   });
 }
 
+export async function clearAuthSession(): Promise<void> {
+  await db.auth_session.delete(1);
+}
+
 export async function tryRefreshToken(): Promise<boolean> {
   const session = await db.auth_session.get(1);
   if (!session?.refresh_token) return false;

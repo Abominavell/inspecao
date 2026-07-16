@@ -2,9 +2,27 @@ import Dexie, { type Table } from "dexie";
 
 export type SyncStatus = "local" | "pending" | "synced" | "conflict";
 
+export type LocalUnit = {
+  id: number;
+  name: string;
+  regional: string;
+  city: string;
+  address: string;
+  unit_type: string;
+  employee_count: number;
+  admin_coordinator: string;
+  general_director: string;
+  characterization: string;
+  source: "bundled" | "local";
+  created_at: string;
+};
+
 export type LocalInspection = {
   client_id: string;
   server_id?: number;
+  local_user_id?: string;
+  pdf_path?: string;
+  pdf_generated_at?: string;
   unit_id?: number;
   unit_name?: string;
   unit_regional?: string;
@@ -53,9 +71,21 @@ export type LocalPhoto = {
   answer_client_id?: string;
   server_photo_id?: number;
   blob: Blob;
+  file_path?: string;
   original_filename: string;
   photo_type: "nc" | "address";
   sync_status: SyncStatus;
+  created_at: string;
+};
+
+export type LocalUserRecord = {
+  id: string;
+  name: string;
+  username: string;
+  pin_hash: string;
+  pin_salt: string;
+  is_admin: boolean;
+  is_active?: boolean;
   created_at: string;
 };
 
@@ -97,6 +127,8 @@ class InspecaoDB extends Dexie {
   reference_cache!: Table<ReferenceCache, string>;
   auth_session!: Table<AuthSession, number>;
   sync_meta!: Table<SyncMeta, string>;
+  local_users!: Table<LocalUserRecord, string>;
+  local_units!: Table<LocalUnit, number>;
 
   constructor() {
     super("inspecao_ssma");
@@ -108,6 +140,55 @@ class InspecaoDB extends Dexie {
       reference_cache: "key, cached_at",
       auth_session: "id",
       sync_meta: "key",
+    });
+    this.version(2).stores({
+      inspections: "client_id, server_id, local_user_id, sync_status, updated_at, status",
+      answers: "++id, inspection_client_id, checklist_item_id, client_id, [inspection_client_id+checklist_item_id]",
+      photos: "client_photo_id, inspection_client_id, checklist_item_id, sync_status",
+      sync_mutations: "mutation_id, status, created_at",
+      reference_cache: "key, cached_at",
+      auth_session: "id",
+      sync_meta: "key",
+      local_users: "id, name",
+      local_units: "id, name, source",
+    });
+    this.version(3).stores({
+      inspections: "client_id, server_id, local_user_id, sync_status, updated_at, status",
+      answers: "++id, inspection_client_id, checklist_item_id, client_id, [inspection_client_id+checklist_item_id]",
+      photos: "client_photo_id, inspection_client_id, checklist_item_id, sync_status",
+      sync_mutations: "mutation_id, status, created_at",
+      reference_cache: "key, cached_at",
+      auth_session: "id",
+      sync_meta: "key",
+      local_users: "id, name, is_active",
+      local_units: "id, name, source",
+    }).upgrade(async (tx) => {
+      await tx
+        .table("local_users")
+        .toCollection()
+        .modify((user: LocalUserRecord) => {
+          if (user.is_active === undefined) user.is_active = true;
+        });
+    });
+    this.version(4).stores({
+      inspections: "client_id, server_id, local_user_id, sync_status, updated_at, status",
+      answers: "++id, inspection_client_id, checklist_item_id, client_id, [inspection_client_id+checklist_item_id]",
+      photos: "client_photo_id, inspection_client_id, checklist_item_id, sync_status",
+      sync_mutations: "mutation_id, status, created_at",
+      reference_cache: "key, cached_at",
+      auth_session: "id",
+      sync_meta: "key",
+      local_users: "id, name, username, is_active",
+      local_units: "id, name, source",
+    }).upgrade(async (tx) => {
+      const defaultAdminId = "00000000-0000-4000-8000-000000000001";
+      const users = await tx.table("local_users").toArray();
+      for (const user of users as LocalUserRecord[]) {
+        if (user.id === defaultAdminId) continue;
+        if (!user.username) {
+          await tx.table("local_users").delete(user.id);
+        }
+      }
     });
   }
 }

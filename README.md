@@ -73,6 +73,19 @@ ADMIN_PASSWORD=admin123
 docker compose up --build
 ```
 
+## App Android offline (tablet)
+
+Projeto Capacitor em [`mobile/`](mobile/) — inspeção 100% offline, dados e PDF no dispositivo.
+
+```bash
+cd mobile
+npm install
+npm run sync      # build frontend/out + copia para Android
+npm run open      # Android Studio
+```
+
+Detalhes: [mobile/README.md](mobile/README.md) · Testes: [docs/tablet-android-tests.md](docs/tablet-android-tests.md)
+
 ## Deploy em produção
 
 - **CloudPanel (API):** [docs/deploy-cloudpanel-backend.md](docs/deploy-cloudpanel-backend.md) — `apiinspecao.iadvh.org.br`, porta **8011**
