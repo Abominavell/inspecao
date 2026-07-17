@@ -58,6 +58,40 @@ class LoginJSONView(APIView):
                 status=status.HTTP_410_GONE,
             )
 
+        # Portão corporativo: só aceita login interno se houver prova Entra válida
+        if getattr(settings, "AUTH_LEGACY_REQUIRE_ENTRA_GATE", False):
+            proof = (
+                request.headers.get("X-Entra-Proof")
+                or request.headers.get("x-entra-proof")
+                or (request.data.get("entra_proof") if isinstance(request.data, dict) else None)
+            )
+            if not proof:
+                log_auth_event(
+                    source="LEGACY",
+                    event="login",
+                    result="FAILURE",
+                    request=request,
+                    detail="Missing Entra gate proof",
+                )
+                return Response(
+                    {"detail": "Acesso restrito à empresa. Autentique-se com Microsoft primeiro."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            try:
+                validate_entra_access_token(str(proof))
+            except EntraValidationError as exc:
+                log_auth_event(
+                    source="LEGACY",
+                    event="login",
+                    result="FAILURE",
+                    request=request,
+                    detail=f"Entra gate rejected: {exc.message}",
+                )
+                return Response(
+                    {"detail": "Sessão Microsoft inválida ou de outro tenant."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"].lower()

@@ -17,7 +17,10 @@ import { navigateApp, normalizeAppHref } from "@/lib/inspectionRoutes";
 import { openCampoApp } from "@/lib/campoAuth";
 import { isFieldApp, isNativeApp } from "@/lib/runtime";
 
-const entraEnabled = process.env.NEXT_PUBLIC_AUTH_ENTRA_ENABLED === "true";
+/** Portão Microsoft: só quem é da empresa vê o formulário interno. */
+const entraGate = process.env.NEXT_PUBLIC_AUTH_ENTRA_GATE_ENABLED === "true";
+/** Modo legado: login só via Microsoft (exchange) — não usar junto com o gate. */
+const entraAsAppLogin = process.env.NEXT_PUBLIC_AUTH_ENTRA_ENABLED === "true" && !entraGate;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,12 +29,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [booting, setBooting] = useState(fieldApp);
+  const [gateChecking, setGateChecking] = useState(entraGate);
+  const [gateReady, setGateReady] = useState(!entraGate);
+  const [entraProof, setEntraProof] = useState<string | null>(null);
   const [exchanging, setExchanging] = useState(false);
 
   const [username, setUsername] = useState("");
   const [localPassword, setLocalPassword] = useState("");
 
-  // Legacy fallback when Entra flag is off
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -58,9 +63,41 @@ export default function LoginPage() {
     })();
   }, [fieldApp]);
 
-  // Após callback Microsoft: troca token Entra → SimpleJWT
+  // Portão Entra: SSO Microsoft → depois mostra formulário e-mail/senha interno
   useEffect(() => {
-    if (fieldApp || !entraEnabled) return;
+    if (fieldApp || !entraGate) return;
+    const err = searchParams.get("error");
+    if (err) {
+      setError("Não foi possível validar o acesso corporativo Microsoft.");
+      setGateChecking(false);
+      setGateReady(false);
+      return;
+    }
+
+    void (async () => {
+      try {
+        const { getSession, signIn } = await import("next-auth/react");
+        const session = await getSession();
+        const proof = session?.entraIdToken || session?.entraAccessToken;
+        if (proof) {
+          setEntraProof(proof);
+          setGateReady(true);
+          setGateChecking(false);
+          return;
+        }
+        setGateChecking(true);
+        await signIn("microsoft-entra-id", { callbackUrl: "/login" });
+      } catch {
+        setError("Falha ao iniciar autenticação Microsoft da empresa.");
+        setGateChecking(false);
+        setGateReady(false);
+      }
+    })();
+  }, [fieldApp, searchParams]);
+
+  // Modo antigo: Microsoft = login da aplicação (exchange)
+  useEffect(() => {
+    if (fieldApp || !entraAsAppLogin) return;
     const err = searchParams.get("error");
     if (err) {
       setError("Falha na autenticação Microsoft. Tente novamente.");
@@ -123,7 +160,11 @@ export default function LoginPage() {
       const { warmAppShellRoutes } = await import("@/lib/inspectionRoutes");
       const { saveAuthSession } = await import("@/lib/sync/SyncEngine");
       const { setAuthContext } = await import("@/lib/webAuth");
-      const { access_token, refresh_token } = await api.login(email, password);
+      const { access_token, refresh_token } = await api.login(
+        email,
+        password,
+        entraGate ? entraProof ?? undefined : undefined,
+      );
       setToken(access_token);
       const me = await api.me();
       await saveAuthSession(access_token, refresh_token ?? null, me as unknown as Record<string, unknown>);
@@ -131,8 +172,8 @@ export default function LoginPage() {
       await cacheReferenceData();
       warmAppShellRoutes();
       router.push(me.auth_source === "INTERNAL_MASTER" ? "/admin-master" : "/");
-    } catch {
-      setError("E-mail ou senha incorretos");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "E-mail ou senha incorretos");
     } finally {
       setLoading(false);
     }
@@ -205,6 +246,17 @@ export default function LoginPage() {
     );
   }
 
+  if (entraGate && gateChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emserh-green-light via-background to-slate-100 px-4">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-xl">
+          <AppLogo variant="login" />
+          <p className="mt-4 text-sm text-slate-600">Validando acesso corporativo Microsoft...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emserh-green-light via-background to-slate-100 px-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-xl">
@@ -222,7 +274,7 @@ export default function LoginPage() {
           </p>
         )}
 
-        {entraEnabled ? (
+        {entraAsAppLogin ? (
           <>
             <Button
               type="button"
@@ -237,8 +289,13 @@ export default function LoginPage() {
               Colaboradores autenticam exclusivamente com a conta corporativa.
             </p>
           </>
-        ) : (
+        ) : gateReady ? (
           <form onSubmit={handleWebLogin} className="space-y-4">
+            {entraGate && (
+              <p className="rounded-lg bg-emserh-green-light/30 px-3 py-2 text-xs text-slate-600">
+                Acesso corporativo confirmado. Entre com seu usuário do sistema.
+              </p>
+            )}
             <Input
               label="E-mail"
               type="email"
@@ -259,6 +316,16 @@ export default function LoginPage() {
               {loading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
+        ) : (
+          <Button
+            type="button"
+            disabled={loading}
+            className="w-full"
+            size="lg"
+            onClick={() => void handleMicrosoftLogin()}
+          >
+            Validar acesso Microsoft
+          </Button>
         )}
 
         <p className="mt-8 text-center text-xs text-slate-400">

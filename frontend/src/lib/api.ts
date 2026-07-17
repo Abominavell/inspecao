@@ -76,9 +76,10 @@ function unwrapList<T>(data: T[] | Paginated<T>): T[] {
 }
 
 export const api = {
-  login: (email: string, password: string) =>
+  login: (email: string, password: string, entraProof?: string) =>
     request<{ access_token: string; refresh_token?: string | null }>("/auth/login/json", {
       method: "POST",
+      headers: entraProof ? { "X-Entra-Proof": entraProof } : undefined,
       body: JSON.stringify({ email, password }),
     }),
 

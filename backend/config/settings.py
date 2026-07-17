@@ -120,6 +120,16 @@ CORS_ALLOWED_ORIGINS = [
     if o.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "x-entra-proof",
+]
 
 CSRF_TRUSTED_ORIGINS = [
     o.strip()
@@ -160,6 +170,12 @@ AUTH_LEGACY_PASSWORD_LOGIN = os.getenv("AUTH_LEGACY_PASSWORD_LOGIN", "true").low
     "yes",
 )
 AUTH_LEGACY_LOGIN_MASTER_ONLY = os.getenv("AUTH_LEGACY_LOGIN_MASTER_ONLY", "false").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+# Exige prova Microsoft (X-Entra-Proof) no POST /auth/login/json — portão corporativo
+AUTH_LEGACY_REQUIRE_ENTRA_GATE = os.getenv("AUTH_LEGACY_REQUIRE_ENTRA_GATE", "false").lower() in (
     "1",
     "true",
     "yes",

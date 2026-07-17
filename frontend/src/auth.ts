@@ -13,12 +13,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       checks: ["pkce", "state"],
       authorization: {
         params: {
+          // Gate corporativo: id_token basta (openid/profile/email). Scope de API opcional.
           scope: [
             "openid",
             "profile",
             "email",
             "offline_access",
-            process.env.AUTH_ENTRA_API_SCOPE || "openid",
+            process.env.AUTH_ENTRA_API_SCOPE || "",
           ]
             .filter(Boolean)
             .join(" "),
@@ -44,6 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       session.entraAccessToken = token.entraAccessToken as string | undefined;
+      session.entraIdToken = token.entraIdToken as string | undefined;
       session.entraExpiresAt = token.entraExpiresAt as number | undefined;
       return session;
     },
